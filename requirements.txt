@@ -1,0 +1,27 @@
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+sqlalchemy==2.0.23
+alembic==1.12.1
+asyncpg==0.29.0
+python-dotenv==1.0.0
+
+# fastapi-users со всеми зависимостями
+fastapi-users[sqlalchemy]==12.1.2
+fastapi-users-db-sqlalchemy==6.0.1
+
+# Для резюме
+python-multipart==0.0.6
+python-docx==1.1.0
+PyPDF2==3.0.1
+
+# Утилиты
+pydantic[email]==2.5.0
+pydantic-settings==2.1.0
+
+# Фикс bcrypt и passlib
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+setuptools<81
+
+# Redis
+redis==5.0.1
