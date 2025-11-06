@@ -1,7 +1,3 @@
-Вот пример краткого и информативного README для твоего проекта:
-
-***
-
 # 📦 Recruitment Platform API
 
 FastAPI backend для системы управления вакансиями, заявками, резюме и ролевыми пользователями (HR, кандидаты, администраторы).  
@@ -11,13 +7,13 @@ FastAPI backend для системы управления вакансиями,
 
 ## 🚀 Быстрый старт
 
-1. **Клонируй репозиторий**
+1. **Клонировать репозиторий:**
    ```
    git clone https://github.com/Vanisus/TalentRadar.backend.git
    cd TalentRadar.backend
    ```
 
-2. **Настрой переменные окружения (.env)**
+2. **Настройка переменных окружения (.env):**
    ```env
    POSTGRES_USER=recruitment_user
    POSTGRES_PASSWORD=recruitment_pass
@@ -31,17 +27,17 @@ FastAPI backend для системы управления вакансиями,
    REDIS_URL=redis://redis:6379/0
    ```
 
-3. **Запусти сервисы через Docker**
+3. **Запуск сервиса через Docker Compose:**
    ```
    docker compose up --build
    ```
 
-4. **Миграции БД**
+4. **Миграция БД:**
    ```
    docker compose exec app alembic upgrade head
    ```
 
-5. **Создать админа (скрипт)**
+5. **Создание админа через скрипт:**
    ```
    docker compose exec app python scripts/create_admin.py
    ```
@@ -50,5 +46,3 @@ FastAPI backend для системы управления вакансиями,
    ```
    http://localhost:8000/docs
    ```
-
-***
