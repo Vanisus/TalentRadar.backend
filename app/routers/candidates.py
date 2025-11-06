@@ -12,6 +12,7 @@ from app.models.application import Application, ApplicationStatus
 from app.models.notification import Notification
 from app.schemas.application import ApplicationCreate, ApplicationRead
 from app.schemas.notification import NotificationRead
+from app.schemas.vacancy import VacancyRead, VacancyBase
 from app.services.resume_parser import parse_resume
 from app.services.match_score import calculate_match_score
 from app.config import settings
@@ -194,3 +195,15 @@ async def mark_notification_as_read(
 
     notification.is_read = True
     await session.commit()
+
+
+@router.get("/vacancies", response_model=list[VacancyRead])
+async def get_open_vacancies(
+        session: AsyncSession = Depends(get_async_session),
+):
+    """Получить все открытые вакансии (is_active=True)"""
+    result = await session.execute(
+        select(Vacancy).where(Vacancy.is_active == True)
+    )
+    vacancies = result.scalars().all()
+    return vacancies

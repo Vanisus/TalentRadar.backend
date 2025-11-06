@@ -38,3 +38,4 @@ class User(SQLAlchemyBaseUserTable[int], Base):
     # Для кандидатов
     resume_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     resume_text: Mapped[str | None] = mapped_column(String, nullable=True)
+    full_name: Mapped[str | None] = mapped_column(String, nullable=True)
