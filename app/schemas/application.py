@@ -23,3 +23,7 @@ class ApplicationRead(BaseModel):
 
 class ApplicationWithVacancy(ApplicationRead):
     vacancy_title: str
+
+
+class ApplicationStatusUpdate(BaseModel):
+    status: ApplicationStatus

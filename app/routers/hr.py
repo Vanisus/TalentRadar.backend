@@ -17,6 +17,7 @@ from app.schemas.candidate_analysis import VacancyApplicationsAnalysis, Applicat
 from app.schemas.notification import NotificationRead
 from app.services.match_score import calculate_match_score
 from app.services.candidate_analysis import analyze_candidate_match
+from app.schemas.application import ApplicationStatusUpdate, ApplicationRead
 
 router = APIRouter(prefix="/hr", tags=["HR"])
 
@@ -670,3 +671,45 @@ async def mark_hr_notification_as_read(
 
     notification.is_read = True
     await session.commit()
+
+
+
+@router.patch("/applications/{application_id}", response_model=ApplicationRead)
+async def update_application_status(
+    application_id: int,
+    data: ApplicationStatusUpdate,
+    current_user: User = Depends(get_current_hr),
+    session: AsyncSession = Depends(get_async_session),
+):
+    # 1) Находим application
+    result = await session.execute(select(Application).where(Application.id == application_id))
+    application = result.scalar_one_or_none()
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found")
+
+    # 2) Проверяем, что вакансия принадлежит HR
+    result = await session.execute(select(Vacancy).where(Vacancy.id == application.vacancy_id))
+    vacancy = result.scalar_one_or_none()
+    if not vacancy or vacancy.hr_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    # 3) Меняем статус
+    application.status = data.status
+    await session.commit()
+    await session.refresh(application)
+
+    # 4) Уведомление кандидату
+    if data.status == ApplicationStatus.ACCEPTED:
+        msg = f"Вас пригласили на скрининг по вакансии '{vacancy.title}'."
+    elif data.status == ApplicationStatus.REJECTED:
+        msg = f"К сожалению, вам отказано по вакансии '{vacancy.title}'."
+    elif data.status == ApplicationStatus.UNDER_REVIEW:
+        msg = f"Ваш отклик на вакансию '{vacancy.title}' взят в работу HR."
+    else:
+        msg = f"Статус отклика на вакансию '{vacancy.title}' обновлён: {data.status.value}."
+
+    session.add(Notification(user_id=application.candidate_id, message=msg))
+    await session.commit()
+
+    return application
+
