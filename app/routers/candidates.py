@@ -1,24 +1,25 @@
+import shutil
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from pathlib import Path
-import shutil
 
+from app.config import settings
 from app.database import get_async_session
 from app.dependencies import get_current_candidate
+from app.models.application import Application
+from app.models.notification import Notification
 from app.models.user import User
 from app.models.vacancy import Vacancy
-from app.models.application import Application, ApplicationStatus
-from app.models.notification import Notification
 from app.schemas.application import ApplicationCreate, ApplicationRead
 from app.schemas.notification import NotificationRead
-from app.schemas.vacancy import VacancyRead, VacancyBase, VacancyWithMatchScore
-from app.schemas.resume_recommendation import ResumeRecommendation
 from app.schemas.platform_rules import PlatformRules, PlatformRule
-from app.services.resume_parser import parse_resume
+from app.schemas.resume_recommendation import ResumeRecommendation
+from app.schemas.vacancy import VacancyRead, VacancyWithMatchScore
 from app.services.match_score import calculate_match_score
+from app.services.resume_parser import parse_resume
 from app.services.resume_recommendations import analyze_resume_improvements
-from app.config import settings
 
 router = APIRouter(prefix="/candidates", tags=["Candidates"])
 
@@ -308,6 +309,28 @@ async def get_resume_recommendations(
     )
     
     return recommendations_data
+
+@router.get("/vacancies/{vacancy_id}", response_model=VacancyRead)
+async def get_open_vacancy(
+        vacancy_id: int,
+        session: AsyncSession = Depends(get_async_session),
+):
+    """Получить одну открытую вакансию по id (для кандидата)"""
+    result = await session.execute(
+        select(Vacancy).where(
+            Vacancy.id == vacancy_id,
+            Vacancy.is_active == True
+        )
+    )
+    vacancy = result.scalar_one_or_none()
+
+    if not vacancy:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Vacancy not found"
+        )
+
+    return vacancy
 
 
 @router.get("/platform-rules", response_model=PlatformRules)

@@ -8,7 +8,7 @@ from app.dependencies import get_current_hr
 from app.models.user import User, UserRole
 from app.models.vacancy import Vacancy
 from app.models.vacancy_template import VacancyTemplate
-from app.models.application import Application
+from app.models.application import Application, ApplicationStatus
 from app.models.notification import Notification
 from app.schemas.vacancy import VacancyCreate, VacancyRead, VacancyUpdate, VacancyFromTemplate
 from app.schemas.vacancy_template import VacancyTemplateCreate, VacancyTemplateRead, VacancyTemplateUpdate
@@ -176,11 +176,12 @@ async def get_vacancy_applications(
             "id": application.id,
             "candidate_email": candidate.email,
             "candidate_id": candidate.id,
+            "candidate_full_name": candidate.full_name,
             "status": application.status.value,
             "match_score": application.match_score,
             "created_at": application.created_at,
             "updated_at": application.updated_at,
-            "resume_path": candidate.resume_path
+            "resume_path": candidate.resume_path,
         })
 
     return {
@@ -445,7 +446,8 @@ async def search_candidates(
         is_active: Optional[bool] = Query(None, description="Только активные кандидаты"),
         is_blocked: Optional[bool] = Query(False, description="Только заблокированные кандидаты (по умолчанию False)"),
         vacancy_id: Optional[int] = Query(None, description="ID вакансии для расчета match_score"),
-        min_match_score: Optional[float] = Query(None, ge=0.0, le=100.0, description="Минимальный match_score с указанной вакансией"),
+        min_match_score: Optional[float] = Query(None, ge=0.0, le=100.0,
+                                                 description="Минимальный match_score с указанной вакансией"),
         search_text: Optional[str] = Query(None, description="Поиск по тексту в резюме, имени или email"),
         current_user: User = Depends(get_current_hr),
         session: AsyncSession = Depends(get_async_session),
@@ -453,22 +455,22 @@ async def search_candidates(
     """Поиск кандидатов по различным критериям"""
     # Начинаем с базового запроса - только кандидаты
     query = select(User).where(User.role == UserRole.CANDIDATE)
-    
+
     # Фильтр по наличию резюме
     if has_resume is not None:
         if has_resume:
             query = query.where(User.resume_text.isnot(None))
         else:
             query = query.where(User.resume_text.is_(None))
-    
+
     # Фильтр по активности
     if is_active is not None:
         query = query.where(User.is_active == is_active)
-    
+
     # Фильтр по блокировке
     if is_blocked is not None:
         query = query.where(User.is_blocked == is_blocked)
-    
+
     # Поиск по тексту (в резюме, имени или email)
     if search_text:
         search_lower = search_text.lower()
@@ -480,11 +482,11 @@ async def search_candidates(
                 func.lower(User.resume_text).contains(search_lower)
             )
         )
-    
+
     # Выполняем запрос
     result = await session.execute(query)
     candidates = result.scalars().all()
-    
+
     # Получаем вакансию для расчета match_score, если указана
     vacancy = None
     if vacancy_id:
@@ -497,7 +499,7 @@ async def search_candidates(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Vacancy not found"
             )
-    
+
     # Фильтруем по навыкам и рассчитываем match_score
     results = []
     for candidate in candidates:
@@ -505,12 +507,12 @@ async def search_candidates(
         if skills:
             if not candidate.resume_text:
                 continue  # Пропускаем кандидатов без резюме, если требуются навыки
-            
+
             resume_lower = candidate.resume_text.lower()
             has_any_skill = any(skill.lower() in resume_lower for skill in skills)
             if not has_any_skill:
                 continue  # Пропускаем кандидатов без требуемых навыков
-        
+
         # Рассчитываем match_score, если указана вакансия
         match_score = None
         if vacancy and candidate.resume_text:
@@ -518,11 +520,11 @@ async def search_candidates(
                 resume_text=candidate.resume_text,
                 required_skills=vacancy.required_skills
             )
-            
+
             # Фильтруем по минимальному match_score
             if min_match_score is not None and match_score < min_match_score:
                 continue  # Пропускаем кандидатов с низким match_score
-        
+
         # Получаем предпросмотр резюме
         resume_preview = None
         if candidate.resume_text:
@@ -530,7 +532,7 @@ async def search_candidates(
             resume_preview = candidate.resume_text[:preview_length]
             if len(candidate.resume_text) > preview_length:
                 resume_preview += "..."
-        
+
         results.append(CandidateSearchResult(
             id=candidate.id,
             email=candidate.email,
@@ -541,14 +543,14 @@ async def search_candidates(
             match_score=match_score,
             resume_preview=resume_preview
         ))
-    
+
     # Сортируем по match_score, если он был рассчитан
     if vacancy_id:
         results.sort(key=lambda x: x.match_score if x.match_score is not None else 0.0, reverse=True)
     else:
         # Иначе сортируем по email
         results.sort(key=lambda x: x.email)
-    
+
     return results
 
 
@@ -603,7 +605,7 @@ async def get_vacancy_applications_analysis(
                 required_skills=vacancy.required_skills
             )
             match_analysis = CandidateMatchAnalysis(**analysis)
-            
+
             if match_analysis.passes:
                 passing_count += 1
             else:
@@ -673,13 +675,12 @@ async def mark_hr_notification_as_read(
     await session.commit()
 
 
-
 @router.patch("/applications/{application_id}", response_model=ApplicationRead)
 async def update_application_status(
-    application_id: int,
-    data: ApplicationStatusUpdate,
-    current_user: User = Depends(get_current_hr),
-    session: AsyncSession = Depends(get_async_session),
+        application_id: int,
+        data: ApplicationStatusUpdate,
+        current_user: User = Depends(get_current_hr),
+        session: AsyncSession = Depends(get_async_session),
 ):
     # 1) Находим application
     result = await session.execute(select(Application).where(Application.id == application_id))
@@ -712,4 +713,3 @@ async def update_application_status(
     await session.commit()
 
     return application
-

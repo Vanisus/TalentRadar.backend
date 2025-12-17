@@ -36,8 +36,8 @@ class UserCreate(schemas.BaseUserCreate):
         if not cyrillic_pattern.match(v):
             raise ValueError('ФИО должно содержать только русские буквы')
         parts = v.strip().split()
-        if len(parts) != 3:
-            raise ValueError('ФИО должно быть в формате: Фамилия Имя Отчество')
+        if len(parts) not in (2, 3):
+            raise ValueError('ФИО должно быть в формате: Фамилия Имя (Отчество)')
         for part in parts:
             if not part[0].isupper():
                 raise ValueError('Каждое слово в ФИО должно начинаться с заглавной буквы')
@@ -71,8 +71,8 @@ class UserUpdate(schemas.BaseUserUpdate):
         if not cyrillic_pattern.match(v):
             raise ValueError('ФИО должно содержать только русские буквы')
         parts = v.strip().split()
-        if len(parts) != 3:
-            raise ValueError('ФИО должно быть в формате: Фамилия Имя Отчество')
+        if len(parts) not in (2, 3):
+            raise ValueError('ФИО должно быть в формате: Фамилия Имя (Отчество)')
         for part in parts:
             if not part[0].isupper():
                 raise ValueError('Каждое слово в ФИО должно начинаться с заглавной буквы')
