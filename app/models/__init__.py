@@ -3,6 +3,15 @@ from app.models.vacancy import Vacancy
 from app.models.vacancy_template import VacancyTemplate
 from app.models.application import Application, ApplicationStatus
 from app.models.notification import Notification
+from app.models.candidate_note import CandidateNote
+from app.models.candidate_profile import (
+    CandidateProfile,
+    WorkExperience,
+    Education,
+    CandidateSkill,
+    Certificate,
+    PortfolioItem,
+)
 
 __all__ = [
     "User",
@@ -12,4 +21,13 @@ __all__ = [
     "Application",
     "ApplicationStatus",
     "Notification",
+    "CandidateProfile",
+    "WorkExperience",
+    "Education",
+    "CandidateSkill",
+    "Certificate",
+    "PortfolioItem",
+    "CandidateNote",
 ]
+
+

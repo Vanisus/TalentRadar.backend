@@ -5,6 +5,11 @@ from sqlalchemy import Boolean, DateTime, Enum as SQLEnum, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
+from typing import TYPE_CHECKING
+from sqlalchemy.orm import relationship
+
+if TYPE_CHECKING:
+    from app.models.candidate_profile import CandidateProfile
 
 
 class UserRole(str, Enum):
@@ -39,3 +44,10 @@ class User(SQLAlchemyBaseUserTable[int], Base):
     resume_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     resume_text: Mapped[str | None] = mapped_column(String, nullable=True)
     full_name: Mapped[str | None] = mapped_column(String, nullable=True)
+
+    # Новый one-to-one профиль кандидата
+    profile: Mapped["CandidateProfile"] = relationship(
+        "CandidateProfile",
+        uselist=False,
+        back_populates="user",
+    )

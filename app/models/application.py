@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from enum import Enum
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Enum as SQLEnum
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Enum as SQLEnum, Text, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -15,6 +15,10 @@ class ApplicationStatus(str, Enum):
 
 class Application(Base):
     __tablename__ = "applications"
+    __table_args__ = (
+        Index("ix_applications_pipeline_stage", "pipeline_stage"),
+        Index("ix_applications_rating", "rating"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
 
@@ -39,6 +43,19 @@ class Application(Base):
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc)
+    )
+
+    rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    # Этап воронки (например: new, screening, interview, offer, rejected)
+    pipeline_stage: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+    )
+
+    match_summary: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
     )
 
     # Relationships

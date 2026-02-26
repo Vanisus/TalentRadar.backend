@@ -3,9 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.services.users import fastapi_users
 from app.schemas.user import UserCreate, UserRead, UserUpdate
-from app.routers import hr, candidates, admin, auth
+from app.routers import hr, candidates, admin, auth, candidate_profile, hr_candidates
 from app.middleware.logging import LoggingMiddleware
-from app.middleware.token_blacklist import TokenBlacklistMiddleware  # 👈 НОВОЕ
+from app.middleware.token_blacklist import TokenBlacklistMiddleware
 
 app = FastAPI(title="Recruitment API")
 
@@ -44,6 +44,9 @@ app.include_router(
 app.include_router(hr.router)
 app.include_router(candidates.router)
 app.include_router(admin.router)
+app.include_router(candidate_profile.router)
+app.include_router(hr_candidates.router)
+
 
 
 @app.get("/")
