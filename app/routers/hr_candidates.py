@@ -19,6 +19,13 @@ from app.services.hr.hr_candidates import (
     delete_candidate_note,
     update_application_hr_fields,
 )
+from app.schemas.hr_candidate_tag import CandidateTagCreate, CandidateTagRead
+from app.services.hr.hr_candidate_tags import (
+    add_candidate_tag_for_hr,
+    list_candidate_tags_for_hr,
+    delete_candidate_tag_for_hr,
+)
+
 
 router = APIRouter(
     prefix="/hr/candidates",
@@ -153,3 +160,58 @@ async def get_application_for_hr(
             detail="Application not found",
         )
     return application
+
+
+# ======== Теги HR по кандидату ========
+
+@router.get(
+    "/{candidate_id}/tags",
+    response_model=list[CandidateTagRead],
+)
+async def get_candidate_tags(
+    candidate_id: int,
+    current_hr: User = Depends(get_current_hr),
+    session: AsyncSession = Depends(get_async_session),
+):
+    return await list_candidate_tags_for_hr(
+        session=session,
+        hr=current_hr,
+        candidate_id=candidate_id,
+    )
+
+
+@router.post(
+    "/{candidate_id}/tags",
+    response_model=CandidateTagRead,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_candidate_tag(
+    candidate_id: int,
+    body: CandidateTagCreate,
+    current_hr: User = Depends(get_current_hr),
+    session: AsyncSession = Depends(get_async_session),
+):
+    return await add_candidate_tag_for_hr(
+        session=session,
+        hr=current_hr,
+        candidate_id=candidate_id,
+        name=body.name,
+    )
+
+
+@router.delete(
+    "/{candidate_id}/tags/{tag_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_candidate_tag(
+    candidate_id: int,
+    tag_id: int,
+    current_hr: User = Depends(get_current_hr),
+    session: AsyncSession = Depends(get_async_session),
+):
+    await delete_candidate_tag_for_hr(
+        session=session,
+        hr=current_hr,
+        candidate_id=candidate_id,
+        tag_id=tag_id,
+    )

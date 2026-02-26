@@ -20,6 +20,8 @@ from app.schemas.candidate_profile import (
     PortfolioItemCreate,
     PortfolioItemRead,
 )
+from app.schemas.resume_summary import ResumeSummary
+from app.services.candidate.resume_center import get_resume_summary_for_candidate
 from app.services.candidate.candidate_profile import (
     get_or_create_profile,
     update_profile,
@@ -339,4 +341,22 @@ async def delete_portfolio_item_endpoint(
         session=session,
         user=current_user,
         item_id=item_id,
+    )
+
+
+@router.get("/resume/summary", response_model=ResumeSummary)
+async def get_resume_summary(
+    current_user: User = Depends(get_current_candidate),
+    session: AsyncSession = Depends(get_async_session),
+):
+    """
+    Центр резюме кандидата:
+    - статус резюме
+    - длина текста
+    - процент заполнения профиля
+    - краткие рекомендации по навыкам (если есть резюме и вакансии)
+    """
+    return await get_resume_summary_for_candidate(
+        session=session,
+        candidate=current_user,
     )

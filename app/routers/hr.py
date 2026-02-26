@@ -6,7 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_async_session
 from app.dependencies import get_current_hr
+from app.models.application import Application
 from app.models.user import User
+from app.models.user import User as CandidateUser
 from app.schemas.application import ApplicationStatusUpdate, ApplicationRead
 from app.schemas.candidate_analysis import (
     VacancyApplicationsAnalysis,
@@ -14,6 +16,7 @@ from app.schemas.candidate_analysis import (
     CandidateMatchAnalysis,
 )
 from app.schemas.candidate_search import CandidateSearchResult
+from app.schemas.hr_saved_search import SavedSearchCreate, SavedSearchRead
 from app.schemas.notification import NotificationRead
 from app.schemas.vacancy import (
     VacancyCreate,
@@ -21,14 +24,24 @@ from app.schemas.vacancy import (
     VacancyUpdate,
     VacancyFromTemplate,
 )
+from app.services.hr.hr_dashboard import get_hr_dashboard
 from app.schemas.vacancy_template import (
     VacancyTemplateCreate,
     VacancyTemplateRead,
     VacancyTemplateUpdate,
 )
-from app.services.candidate.candidate_analysis import analyze_candidate_match
 from app.services.analytics.hr_analytics import get_vacancy_analytics_for_hr
-from app.services.hr.hr_search import search_hr_vacancies, get_hr_vacancy_with_stats, search_candidates_for_hr
+from app.services.candidate.candidate_analysis import analyze_candidate_match
+from app.services.hr.hr_applications import (
+    get_vacancy_applications_for_hr,
+    update_application_status_for_hr,
+)
+from app.services.hr.hr_saved_searches import (
+    create_saved_search_for_hr,
+    list_saved_searches_for_hr,
+    delete_saved_search_for_hr, get_saved_search_for_hr,
+)
+from app.services.hr.hr_search import get_hr_vacancy_with_stats, search_candidates_for_hr
 from app.services.hr.hr_templates import (
     create_template_for_hr,
     get_hr_templates,
@@ -48,13 +61,6 @@ from app.services.notifications.notifications import (
     get_notifications_for_user,
     mark_notification_as_read_for_user,
 )
-from app.services.hr.hr_applications import (
-    get_vacancy_applications_for_hr,
-    update_application_status_for_hr,
-)
-from app.models.vacancy import Vacancy
-from app.models.application import Application
-from app.models.user import User as CandidateUser
 
 router = APIRouter(prefix="/hr", tags=["HR"])
 
@@ -403,4 +409,95 @@ async def mark_hr_notification_as_read(
         session=session,
         user=current_user,
         notification_id=notification_id,
+    )
+
+# ==================== Сохранённые поиски кандидатов ====================
+
+@router.get(
+    "/candidates/searches",
+    response_model=list[SavedSearchRead],
+)
+async def list_saved_candidate_searches(
+    current_user: User = Depends(get_current_hr),
+    session: AsyncSession = Depends(get_async_session),
+):
+    return await list_saved_searches_for_hr(
+        session=session,
+        hr=current_user,
+    )
+
+
+@router.post(
+    "/candidates/searches",
+    response_model=SavedSearchRead,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_saved_candidate_search(
+    body: SavedSearchCreate,
+    current_user: User = Depends(get_current_hr),
+    session: AsyncSession = Depends(get_async_session),
+):
+    saved = await create_saved_search_for_hr(
+        session=session,
+        hr=current_user,
+        name=body.name,
+        params=body.params,
+    )
+    return saved
+
+
+@router.delete(
+    "/candidates/searches/{search_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_saved_candidate_search(
+    search_id: int,
+    current_user: User = Depends(get_current_hr),
+    session: AsyncSession = Depends(get_async_session),
+):
+    await delete_saved_search_for_hr(
+        session=session,
+        hr=current_user,
+        search_id=search_id,
+    )
+
+
+@router.get(
+    "/candidates/searches/{search_id}/run",
+    response_model=list[CandidateSearchResult],
+)
+async def run_saved_candidate_search(
+    search_id: int,
+    current_user: User = Depends(get_current_hr),
+    session: AsyncSession = Depends(get_async_session),
+):
+    saved = await get_saved_search_for_hr(
+        session=session,
+        hr=current_user,
+        search_id=search_id,
+    )
+
+    return await search_candidates_for_hr(
+        session=session,
+        **saved.params,
+    )
+
+@router.get("/dashboard")
+async def get_hr_dashboard_view(
+    current_user: User = Depends(get_current_hr),
+    session: AsyncSession = Depends(get_async_session),
+    days_new: int = 1,
+    days_stale: int = 7,
+):
+    """
+    Рабочий экран HR:
+    - новые отклики за последние days_new дней
+    - непрочитанные уведомления
+    - вакансии без откликов / с устаревшими откликами за days_stale дней
+    """
+    return await get_hr_dashboard(
+        session=session,
+        hr=current_user,
+        days_new=days_new,
+        days_stale=days_stale,
     )
