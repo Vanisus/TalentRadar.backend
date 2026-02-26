@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.exceptions import NotFoundError
 from app.models.candidate_profile import (
     CandidateProfile,
     WorkExperience,
@@ -90,6 +91,8 @@ async def update_profile(
     return result.scalar_one()
 
 
+# ======== Experience ========
+
 async def add_experience(
     session: AsyncSession,
     user: User,
@@ -141,7 +144,14 @@ async def update_experience(
     experience = result.scalar_one_or_none()
 
     if experience is None:
-        raise ValueError("experience_not_found")
+        raise NotFoundError(
+            message="Experience not found",
+            code="EXPERIENCE_NOT_FOUND",
+            details={
+                "experience_id": experience_id,
+                "user_id": user.id,
+            },
+        )
 
     for field, value in data.items():
         setattr(experience, field, value)
@@ -167,10 +177,18 @@ async def delete_experience(
     experience = result.scalar_one_or_none()
 
     if experience is None:
-        raise ValueError("experience_not_found")
+        raise NotFoundError(
+            message="Experience not found",
+            code="EXPERIENCE_NOT_FOUND",
+            details={
+                "experience_id": experience_id,
+                "user_id": user.id,
+            },
+        )
 
     await session.delete(experience)
     await session.commit()
+
 
 # ======== Education ========
 
@@ -220,7 +238,14 @@ async def update_education_service(
     )
     edu = result.scalar_one_or_none()
     if edu is None:
-        raise ValueError("education_not_found")
+        raise NotFoundError(
+            message="Education not found",
+            code="EDUCATION_NOT_FOUND",
+            details={
+                "education_id": education_id,
+                "user_id": user.id,
+            },
+        )
 
     for field, value in data.items():
         setattr(edu, field, value)
@@ -245,7 +270,14 @@ async def delete_education_service(
     )
     edu = result.scalar_one_or_none()
     if edu is None:
-        raise ValueError("education_not_found")
+        raise NotFoundError(
+            message="Education not found",
+            code="EDUCATION_NOT_FOUND",
+            details={
+                "education_id": education_id,
+                "user_id": user.id,
+            },
+        )
 
     await session.delete(edu)
     await session.commit()
@@ -298,7 +330,14 @@ async def delete_skill_service(
     )
     skill = result.scalar_one_or_none()
     if skill is None:
-        raise ValueError("skill_not_found")
+        raise NotFoundError(
+            message="Skill not found",
+            code="SKILL_NOT_FOUND",
+            details={
+                "skill_id": skill_id,
+                "user_id": user.id,
+            },
+        )
 
     await session.delete(skill)
     await session.commit()
@@ -351,7 +390,14 @@ async def delete_certificate_service(
     )
     cert = result.scalar_one_or_none()
     if cert is None:
-        raise ValueError("certificate_not_found")
+        raise NotFoundError(
+            message="Certificate not found",
+            code="CERTIFICATE_NOT_FOUND",
+            details={
+                "certificate_id": certificate_id,
+                "user_id": user.id,
+            },
+        )
 
     await session.delete(cert)
     await session.commit()
@@ -404,7 +450,14 @@ async def delete_portfolio_item_service(
     )
     item = result.scalar_one_or_none()
     if item is None:
-        raise ValueError("portfolio_item_not_found")
+        raise NotFoundError(
+            message="Portfolio item not found",
+            code="PORTFOLIO_ITEM_NOT_FOUND",
+            details={
+                "item_id": item_id,
+                "user_id": user.id,
+            },
+        )
 
     await session.delete(item)
     await session.commit()

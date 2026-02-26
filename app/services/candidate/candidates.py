@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.exceptions import BadRequestError
 from app.models.candidate_profile import (
     CandidateProfile,
     WorkExperience,
@@ -15,15 +16,11 @@ from app.models.candidate_profile import (
     Certificate,
 )
 from app.models.user import User
-from app.services.resume_parser import parse_resume
-from app.services.resume_structurer import build_profile_from_resume_text
+from app.services.resumes.resume_parser import parse_resume
+from app.services.resumes.resume_structurer import build_profile_from_resume_text
 
 
 ALLOWED_RESUME_EXTENSIONS = [".docx", ".pdf"]
-
-
-class ResumeFormatError(Exception):
-    pass
 
 
 async def handle_resume_upload(
@@ -35,12 +32,15 @@ async def handle_resume_upload(
     Сохранить файл резюме, распарсить текст, обновить User и структурированный профиль.
     Возвращает короткую сводку для ответа API.
     """
-    from pathlib import Path  # локальный импорт, чтобы не плодить зависимостей для тестов
-
     file_ext = Path(file.filename).suffix.lower()
     if file_ext not in ALLOWED_RESUME_EXTENSIONS:
-        raise ResumeFormatError(
-            f"Only {', '.join(ALLOWED_RESUME_EXTENSIONS)} files are allowed"
+        raise BadRequestError(
+            message="Invalid resume file format",
+            code="INVALID_RESUME_FORMAT",
+            details={
+                "allowed_extensions": ALLOWED_RESUME_EXTENSIONS,
+                "got_extension": file_ext,
+            },
         )
 
     upload_dir = Path(settings.UPLOAD_DIR)

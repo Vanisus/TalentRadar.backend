@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException, status
 from app.models.user import User, UserRole
-from app.services.users import current_active_user
+from app.core.users import current_active_user
 
 
 async def get_current_hr(

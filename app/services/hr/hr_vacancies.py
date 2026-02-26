@@ -1,19 +1,11 @@
 from typing import List
 
-from sqlalchemy import select, func
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.exceptions import NotFoundError
 from app.models.user import User
 from app.models.vacancy import Vacancy
-from app.models.application import Application
-
-
-class VacancyNotFoundError(Exception):
-    pass
-
-
-class VacancyForbiddenError(Exception):
-    pass
 
 
 async def create_vacancy_for_hr(
@@ -54,7 +46,11 @@ async def get_hr_vacancy(
     )
     vacancy = result.scalar_one_or_none()
     if vacancy is None:
-        raise VacancyNotFoundError()
+        raise NotFoundError(
+            message="Vacancy not found",
+            code="VACANCY_NOT_FOUND",
+            details={"vacancy_id": vacancy_id},
+        )
     return vacancy
 
 

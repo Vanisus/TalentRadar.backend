@@ -1,6 +1,6 @@
 from fastapi import Request, HTTPException, status
 from starlette.middleware.base import BaseHTTPMiddleware
-from app.services.redis_client import redis_client
+from app.core.redis_client import redis_client
 
 
 class TokenBlacklistMiddleware(BaseHTTPMiddleware):

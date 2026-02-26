@@ -5,13 +5,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_async_session
 from app.models.user import User
-from app.services.users import get_user_manager, current_active_user
-from app.services.auth_tracking import (
+from app.core.users import get_user_manager, current_active_user
+from app.services.auth.auth_tracking import (
     record_failed_login,
     clear_failed_login,
     is_locked_out
 )
-from app.services.redis_client import redis_client
+from app.core.redis_client import redis_client
 from fastapi_users.manager import BaseUserManager
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -62,7 +62,7 @@ async def login_with_tracking(
     await clear_failed_login(email)
 
     # Генерируем токен
-    from app.services.users import auth_backend
+    from app.core.users import auth_backend
     token = await auth_backend.get_strategy().write_token(user)
 
     # Сохраняем токен в Redis (для logout)

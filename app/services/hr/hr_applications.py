@@ -3,25 +3,14 @@ from typing import List, Dict, Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.exceptions import NotFoundError, ForbiddenError
 from app.models.application import Application, ApplicationStatus
 from app.models.notification import Notification
 from app.models.user import User
 from app.models.vacancy import Vacancy
 
 
-class ApplicationNotFoundError(Exception):
-    pass
-
-
-class VacancyNotFoundError(Exception):
-    pass
-
-
-class VacancyForbiddenError(Exception):
-    pass
-
-
-async def ensure_hr_vacancy(
+async def _ensure_hr_vacancy(
     session: AsyncSession,
     hr: User,
     vacancy_id: int,
@@ -34,7 +23,11 @@ async def ensure_hr_vacancy(
     )
     vacancy = result.scalar_one_or_none()
     if vacancy is None:
-        raise VacancyNotFoundError()
+        raise NotFoundError(
+            message="Vacancy not found",
+            code="VACANCY_NOT_FOUND",
+            details={"vacancy_id": vacancy_id},
+        )
     return vacancy
 
 
@@ -44,7 +37,7 @@ async def get_vacancy_applications_for_hr(
     vacancy_id: int,
     min_score: float = 0,
 ) -> Dict[str, Any]:
-    vacancy = await ensure_hr_vacancy(session=session, hr=hr, vacancy_id=vacancy_id)
+    vacancy = await _ensure_hr_vacancy(session=session, hr=hr, vacancy_id=vacancy_id)
 
     result = await session.execute(
         select(Application, User)
@@ -92,7 +85,11 @@ async def update_application_status_for_hr(
     )
     application = result.scalar_one_or_none()
     if application is None:
-        raise ApplicationNotFoundError()
+        raise NotFoundError(
+            message="Application not found",
+            code="APPLICATION_NOT_FOUND",
+            details={"application_id": application_id},
+        )
 
     # 2) Проверяем, что вакансия принадлежит HR
     result = await session.execute(
@@ -100,9 +97,21 @@ async def update_application_status_for_hr(
     )
     vacancy = result.scalar_one_or_none()
     if vacancy is None:
-        raise VacancyNotFoundError()
+        raise NotFoundError(
+            message="Vacancy not found",
+            code="VACANCY_NOT_FOUND",
+            details={"vacancy_id": application.vacancy_id},
+        )
+
     if vacancy.hr_id != hr.id:
-        raise VacancyForbiddenError()
+        raise ForbiddenError(
+            message="Forbidden",
+            code="FORBIDDEN_VACANCY_ACCESS",
+            details={
+                "vacancy_id": vacancy.id,
+                "hr_id": hr.id,
+            },
+        )
 
     # 3) Меняем статус
     application.status = new_status
@@ -117,7 +126,10 @@ async def update_application_status_for_hr(
     elif new_status == ApplicationStatus.UNDER_REVIEW:
         msg = f"Ваш отклик на вакансию '{vacancy.title}' взят в работу HR."
     else:
-        msg = f"Статус отклика на вакансию '{vacancy.title}' обновлён: {new_status.value}."
+        msg = (
+            f"Статус отклика на вакансию '{vacancy.title}' обновлён: "
+            f"{new_status.value}."
+        )
 
     session.add(Notification(user_id=application.candidate_id, message=msg))
     await session.commit()

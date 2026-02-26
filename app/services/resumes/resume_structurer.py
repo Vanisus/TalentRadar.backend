@@ -43,7 +43,6 @@ class Section:
 
 
 def _normalize_text(text: str) -> str:
-    # Убираем лишние пробелы, приводим к unix-строкам
     return re.sub(r"\r\n?", "\n", text).strip()
 
 
@@ -53,38 +52,34 @@ def _split_sections(resume_text: str) -> List[Section]:
     """
     text = _normalize_text(resume_text)
 
-    # Подготовим паттерн для всех заголовков
-    header_patterns = []
+    header_patterns: List[str] = []
     for key, headers in SECTION_HEADERS.items():
         for h in headers:
-            # ^\s*(опыт работы)\s*:?
             header_patterns.append(
                 rf"(?P<{key}>^\s*{re.escape(h)}\s*:?\s*$)"
             )
 
-    combined_pattern = "|".join(header_patterns)
-    regex = re.compile(combined_pattern, re.IGNORECASE | re.MULTILINE)
+    if not header_patterns:
+        return [Section(name="root", text=text)]
+
+    regex = re.compile("|".join(header_patterns), re.IGNORECASE | re.MULTILINE)
 
     sections: List[Section] = []
     current_name = "root"
     current_start = 0
 
     for match in regex.finditer(text):
-        # Сохраняем предыдущий блок
-        if current_name is not None:
-            section_text = text[current_start:match.start()].strip()
-            if section_text:
-                sections.append(Section(name=current_name, text=section_text))
+        section_text = text[current_start:match.start()].strip()
+        if section_text:
+            sections.append(Section(name=current_name, text=section_text))
 
-        # Определяем новое имя секции по именованному груп-матчу
         for key in SECTION_HEADERS.keys():
-            if match.group(key):
+            if match.groupdict().get(key):
                 current_name = key
                 break
 
         current_start = match.end()
 
-    # Хвост
     tail = text[current_start:].strip()
     if tail:
         sections.append(Section(name=current_name, text=tail))
@@ -95,37 +90,45 @@ def _split_sections(resume_text: str) -> List[Section]:
 def _parse_experience_section(text: str) -> List[Dict[str, Any]]:
     """
     Очень грубый парсер опыта:
-    - предполагаем, что опыт разделён пустыми строками
+    - опыт разделён пустыми строками
     - первая строка блока: должность + компания (эвристика)
-    - ищем даты формата 'ММ.ГГГГ' или 'ГГГГ' и 'по настоящее время'
+    - даты формата 'ММ.ГГГГ' или 'ГГГГ'
     """
     blocks = [b.strip() for b in text.split("\n\n") if b.strip()]
     experiences: List[Dict[str, Any]] = []
 
     date_pattern = re.compile(
-        r"(?P<start>(\d{2}\.\d{4}|\d{4}))\s*(?:[-–—]\s*(?P<end>(\d{2}\.\d{4}|\d{4}|по настоящее время|настоящее время|по н\.в\.)))?",
+        r"(?P<start>(\d{2}\.\d{4}|\d{4}))\s*[-–—]?\s*(?P<end>(\d{2}\.\d{4}|\d{4}|по настоящее время|настоящее время|по н\.в\.)|)?",
         re.IGNORECASE,
     )
+
+    def _parse_date(s: str | None) -> Optional[date]:
+        if not s:
+            return None
+        try:
+            if "." in s:
+                m, y = s.split(".")
+                return date(int(y), int(m), 1)
+            return date(int(s), 1, 1)
+        except ValueError:
+            return None
 
     for block in blocks:
         lines = [l.strip() for l in block.split("\n") if l.strip()]
         if not lines:
             continue
 
-        # Первая строка: должность + компания (эвристика — разделяем по "—" или "," первые два куска)
         title_company = lines[0]
         position = title_company
-        company = None
+        company: Optional[str] = None
 
-        # Попробуем разбить по "—" или "-"
         for sep in ("—", "-", "–", ","):
             if sep in title_company:
-                parts = [p.strip() for p in title_company.split(sep, 1)]
-                if len(parts) == 2:
-                    position, company = parts[0], parts[1]
-                    break
+                left, right = title_company.split(sep, 1)
+                position = left.strip()
+                company = right.strip()
+                break
 
-        # Ищем даты в блоке
         dates_match = date_pattern.search(block)
         start_date: Optional[date] = None
         end_date: Optional[date] = None
@@ -135,18 +138,7 @@ def _parse_experience_section(text: str) -> List[Dict[str, Any]]:
             start_raw = dates_match.group("start")
             end_raw = dates_match.group("end")
 
-            def parse_year_or_month_year(s: str) -> Optional[date]:
-                if not s:
-                    return None
-                try:
-                    if "." in s:
-                        m, y = s.split(".")
-                        return date(int(y), int(m), 1)
-                    return date(int(s), 1, 1)
-                except ValueError:
-                    return None
-
-            start_date = parse_year_or_month_year(start_raw)
+            start_date = _parse_date(start_raw)
 
             if end_raw:
                 end_raw_norm = end_raw.lower()
@@ -154,10 +146,9 @@ def _parse_experience_section(text: str) -> List[Dict[str, Any]]:
                     is_current = True
                     end_date = None
                 else:
-                    end_date = parse_year_or_month_year(end_raw)
+                    end_date = _parse_date(end_raw)
 
-        description_lines = lines[1:]
-        description = "\n".join(description_lines).strip() or None
+        description = "\n".join(lines[1:]).strip() or None
 
         experiences.append(
             {
@@ -175,49 +166,39 @@ def _parse_experience_section(text: str) -> List[Dict[str, Any]]:
 
 def _parse_education_section(text: str) -> List[Dict[str, Any]]:
     """
-    Примерно делим по строкам, ищем год и ВУЗ.
+    Простейший парсер образования:
+    - ищем годы
+    - собираем остальной текст как institution/field_of_study
     """
     lines = [l.strip() for l in text.split("\n") if l.strip()]
     educations: List[Dict[str, Any]] = []
 
-    year_pattern = re.compile(r"(19|20)\d{2}")
+    year_pattern = re.compile(r"(19\d{2}|20\d{2})")
 
     current: Dict[str, Any] = {}
     for line in lines:
-        years = year_pattern.findall(line)
-        if years:
-            # новая запись образования
+        year_nums = year_pattern.findall(line)
+
+        if year_nums:
             if current:
                 educations.append(current)
                 current = {}
 
-            # возьмём первый и, возможно, второй год
-            nums = re.findall(r"(19|20)\d{2}", line)
-            # nums в виде [ ('20','20'), ... ] — для простоты вытащим через другой regex
-            year_nums = re.findall(r"(19\d{2}|20\d{2})", line)
-            if year_nums:
-                current["start_year"] = int(year_nums[0])
-                if len(year_nums) > 1:
-                    current["end_year"] = int(year_nums[1])
+            current["start_year"] = int(year_nums[0])
+            if len(year_nums) > 1:
+                current["end_year"] = int(year_nums[1])
 
-            # ВУЗ и специальность просто сохраним в institution
             current.setdefault("institution", line)
         else:
-            # Остальные строки добавляем в institution/field_of_study
             if "institution" not in current:
                 current["institution"] = line
             else:
-                # если есть поле field_of_study — дописываем туда
-                existing = current.get("field_of_study")
-                if existing:
-                    current["field_of_study"] = existing + " " + line
-                else:
-                    current["field_of_study"] = line
+                field = current.get("field_of_study")
+                current["field_of_study"] = f"{field} {line}".strip() if field else line
 
     if current:
         educations.append(current)
 
-    # Проставим дефолты
     for edu in educations:
         edu.setdefault("degree", None)
         edu.setdefault("field_of_study", None)
@@ -227,62 +208,52 @@ def _parse_education_section(text: str) -> List[Dict[str, Any]]:
 
 def _parse_skills_section(text: str) -> List[Dict[str, Any]]:
     """
-    Навыки обычно перечислены через запятую или построчно.
+    Навыки: через запятую или по строкам.
     """
     skills: List[Dict[str, Any]] = []
 
-    # Сначала попробуем разделить по запятой — для hh это частый случай
     if "," in text:
         parts = [p.strip() for p in text.replace("\n", " ").split(",") if p.strip()]
-        for p in parts:
-            skills.append({"name": p, "level": None})
     else:
-        # Иначе — каждая непустая строка = навык
-        lines = [l.strip() for l in text.split("\n") if l.strip()]
-        for l in lines:
-            skills.append({"name": l, "level": None})
+        parts = [l.strip() for l in text.split("\n") if l.strip()]
+
+    for p in parts:
+        skills.append({"name": p, "level": None})
 
     return skills
 
 
 def _parse_about_section(text: str) -> Dict[str, Any]:
-    """
-    Просто возвращаем текст 'О себе'.
-    """
     return {"about_me": text.strip()}
 
 
 def _parse_certificates_section(text: str) -> List[Dict[str, Any]]:
     """
-    Простейший парсер сертификатов: каждая строка = отдельный сертификат.
+    Каждая строка = сертификат.
     """
     lines = [l.strip() for l in text.split("\n") if l.strip()]
-    certificates: List[Dict[str, Any]] = []
-
-    for line in lines:
-        certificates.append(
-            {
-                "title": line,
-                "issuer": None,
-                "issue_date": None,
-                "file_path": None,
-            }
-        )
-
-    return certificates
+    return [
+        {
+            "title": line,
+            "issuer": None,
+            "issue_date": None,
+            "file_path": None,
+        }
+        for line in lines
+    ]
 
 
 def build_profile_from_resume_text(resume_text: str) -> Dict[str, Any]:
     """
     Построить структурированный профиль из текста резюме.
-    Возвращает dict вида:
-    {
-      "profile": {...},
-      "experiences": [...],
-      "educations": [...],
-      "skills": [...],
-      "certificates": [...],
-    }
+    Формат:
+      {
+        "profile": {...},
+        "experiences": [...],
+        "educations": [...],
+        "skills": [...],
+        "certificates": [...],
+      }
     """
     sections = _split_sections(resume_text)
 
@@ -304,7 +275,6 @@ def build_profile_from_resume_text(resume_text: str) -> Dict[str, Any]:
         elif section.name == "certificates":
             certificates.extend(_parse_certificates_section(section.text))
         else:
-            # root или неизвестная секция — можно в будущем использовать для доп. эвристик
             continue
 
     return {

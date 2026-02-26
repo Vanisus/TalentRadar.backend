@@ -3,6 +3,7 @@ from typing import List
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.exceptions import NotFoundError
 from app.models.notification import Notification
 from app.models.user import User
 
@@ -32,7 +33,14 @@ async def mark_notification_as_read_for_user(
     )
     notification = result.scalar_one_or_none()
     if notification is None:
-        raise ValueError("notification_not_found")
+        raise NotFoundError(
+            message="Notification not found",
+            code="NOTIFICATION_NOT_FOUND",
+            details={
+                "notification_id": notification_id,
+                "user_id": user.id,
+            },
+        )
 
     notification.is_read = True
     await session.commit()

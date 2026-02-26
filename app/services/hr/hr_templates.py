@@ -3,14 +3,11 @@ from typing import List
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.exceptions import NotFoundError
 from app.models.user import User
 from app.models.vacancy import Vacancy
 from app.models.vacancy_template import VacancyTemplate
 from app.schemas.vacancy import VacancyFromTemplate
-
-
-class TemplateNotFoundError(Exception):
-    pass
 
 
 async def create_template_for_hr(
@@ -51,7 +48,11 @@ async def get_hr_template(
     )
     template = result.scalar_one_or_none()
     if template is None:
-        raise TemplateNotFoundError()
+        raise NotFoundError(
+            message="Template not found",
+            code="TEMPLATE_NOT_FOUND",
+            details={"template_id": template_id},
+        )
     return template
 
 

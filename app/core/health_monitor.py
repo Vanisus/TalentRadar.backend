@@ -1,9 +1,8 @@
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any
-import os
 
-from app.services.redis_client import redis_client
+from app.core.redis_client import redis_client
 from app.config import settings
 
 # Опциональный импорт psutil для системных метрик

@@ -5,10 +5,12 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.exceptions import NotFoundError, ForbiddenError
 from app.models.application import Application
 from app.models.candidate_note import CandidateNote
 from app.models.candidate_profile import CandidateProfile, WorkExperience, PortfolioItem, CandidateSkill
 from app.models.user import User
+from app.models.vacancy import Vacancy
 from app.schemas.hr_candidate import HRCandidateShort, HRCandidateProfile
 
 
@@ -114,7 +116,6 @@ async def list_hr_candidates(
         )
 
     if skill:
-        # упрощённо: просто джоин по таблице навыков и фильтр по ILIKE
         query = (
             query.join(
                 CandidateSkill,
@@ -197,13 +198,18 @@ async def delete_candidate_note(
     )
     note = result.scalar_one_or_none()
     if note is None:
-        raise ValueError("note_not_found")
+        raise NotFoundError(
+            message="Candidate note not found",
+            code="CANDIDATE_NOTE_NOT_FOUND",
+            details={
+                "note_id": note_id,
+                "candidate_id": candidate_id,
+                "hr_id": hr_id,
+            },
+        )
 
     await session.delete(note)
     await session.commit()
-
-
-
 
 
 async def update_application_hr_fields(
@@ -212,13 +218,39 @@ async def update_application_hr_fields(
     hr_id: int,
     data: dict,
 ) -> Application:
-    # TODO: по-хорошему проверить, что этот HR имеет доступ к вакансии
+    # Находим application
     result = await session.execute(
         select(Application).where(Application.id == application_id)
     )
     application = result.scalar_one_or_none()
     if application is None:
-        raise ValueError("application_not_found")
+        raise NotFoundError(
+            message="Application not found",
+            code="APPLICATION_NOT_FOUND",
+            details={"application_id": application_id},
+        )
+
+    # Проверяем, что вакансия принадлежит этому HR
+    vacancy_result = await session.execute(
+        select(Vacancy).where(Vacancy.id == application.vacancy_id)
+    )
+    vacancy = vacancy_result.scalar_one_or_none()
+    if vacancy is None:
+        raise NotFoundError(
+            message="Vacancy not found",
+            code="VACANCY_NOT_FOUND",
+            details={"vacancy_id": application.vacancy_id},
+        )
+
+    if vacancy.hr_id != hr_id:
+        raise ForbiddenError(
+            message="Forbidden",
+            code="FORBIDDEN_VACANCY_ACCESS",
+            details={
+                "vacancy_id": vacancy.id,
+                "hr_id": hr_id,
+            },
+        )
 
     for field, value in data.items():
         setattr(application, field, value)

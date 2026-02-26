@@ -2,16 +2,16 @@ from typing import List, Dict, Any
 
 
 def analyze_candidate_match(
-    resume_text: str,
-    required_skills: List[str]
+        resume_text: str,
+        required_skills: List[str]
 ) -> Dict[str, Any]:
     """
     Детальный анализ соответствия кандидата требованиям вакансии
-    
+
     Args:
         resume_text: Текст резюме кандидата
         required_skills: Список требуемых навыков для вакансии
-        
+
     Returns:
         Словарь с детальным анализом соответствия
     """
@@ -24,28 +24,28 @@ def analyze_candidate_match(
             "missing_skills_count": len(required_skills) if required_skills else 0,
             "explanation": "Резюме отсутствует или требования вакансии не указаны" if not resume_text else "Требования вакансии не указаны"
         }
-    
+
     resume_lower = resume_text.lower()
-    
+
     # Анализируем каждый требуемый навык
     matched_skills = []
     missing_skills = []
-    
+
     for skill in required_skills:
         skill_lower = skill.lower()
         if skill_lower in resume_lower:
             matched_skills.append(skill)
         else:
             missing_skills.append(skill)
-    
+
     # Рассчитываем процент совпадения
     match_score = (len(matched_skills) / len(required_skills)) * 100 if required_skills else 0.0
     match_score = round(match_score, 2)
-    
+
     # Определяем, проходит ли кандидат
     # Кандидат проходит, если совпадение >= 50%
     passes = match_score >= 50.0
-    
+
     # Формируем объяснение
     explanation = ""
     if passes:
@@ -61,7 +61,7 @@ def analyze_candidate_match(
         explanation = f"Кандидат не подходит на вакансию. Совпадение: {match_score}%. Найдено только {len(matched_skills)} из {len(required_skills)} требуемых навыков."
         if missing_skills:
             explanation += f" Отсутствуют следующие навыки: {', '.join(missing_skills)}."
-    
+
     return {
         "passes": passes,
         "match_score": match_score,

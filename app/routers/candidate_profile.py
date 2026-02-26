@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_async_session
@@ -20,7 +20,7 @@ from app.schemas.candidate_profile import (
     PortfolioItemCreate,
     PortfolioItemRead,
 )
-from app.services.candidate_profile import (
+from app.services.candidate.candidate_profile import (
     get_or_create_profile,
     update_profile,
     add_experience,
@@ -48,17 +48,11 @@ router = APIRouter(
 )
 
 
-# ======== Профиль целиком ========
-
 @router.get("", response_model=CandidateProfileRead)
 async def get_my_profile(
     current_user: User = Depends(get_current_candidate),
     session: AsyncSession = Depends(get_async_session),
 ):
-    """
-    Получить свой структурированный профиль кандидата.
-    Если профиля нет — создаётся пустой.
-    """
     profile = await get_or_create_profile(
         session=session,
         user=current_user,
@@ -73,10 +67,6 @@ async def update_my_profile(
     current_user: User = Depends(get_current_candidate),
     session: AsyncSession = Depends(get_async_session),
 ):
-    """
-    Обновить свой структурированный профиль кандидата.
-    Создаёт профиль, если его ещё нет.
-    """
     update_data = profile_data.model_dump(exclude_unset=True)
     profile = await update_profile(
         session=session,
@@ -86,27 +76,23 @@ async def update_my_profile(
     return profile
 
 
-# ======== Опыт работы ========
+# ======== Experience ========
 
 @router.post(
     "/experiences",
     response_model=WorkExperienceRead,
-    status_code=status.HTTP_201_CREATED,
+    status_code=201,
 )
 async def add_experience_endpoint(
     experience_data: WorkExperienceCreate,
     current_user: User = Depends(get_current_candidate),
     session: AsyncSession = Depends(get_async_session),
 ):
-    """
-    Добавить запись об опыте работы в профиль.
-    """
-    experience = await add_experience(
+    return await add_experience(
         session=session,
         user=current_user,
         data=experience_data.model_dump(exclude_unset=True),
     )
-    return experience
 
 
 @router.get(
@@ -117,11 +103,7 @@ async def get_my_experiences_endpoint(
     current_user: User = Depends(get_current_candidate),
     session: AsyncSession = Depends(get_async_session),
 ):
-    """
-    Получить все записи опыта работы из своего профиля.
-    """
-    experiences = await list_experiences(session=session, user=current_user)
-    return experiences
+    return await list_experiences(session=session, user=current_user)
 
 
 @router.patch(
@@ -130,72 +112,51 @@ async def get_my_experiences_endpoint(
 )
 async def update_experience_endpoint(
     experience_id: int,
-    experience_data: WorkExperienceCreate,  # позже можно заменить на WorkExperienceUpdate
+    experience_data: WorkExperienceCreate,
     current_user: User = Depends(get_current_candidate),
     session: AsyncSession = Depends(get_async_session),
 ):
-    """
-    Обновить запись опыта работы.
-    """
-    try:
-        experience = await update_experience(
-            session=session,
-            user=current_user,
-            experience_id=experience_id,
-            data=experience_data.model_dump(exclude_unset=True),
-        )
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Experience not found",
-        )
-
-    return experience
+    return await update_experience(
+        session=session,
+        user=current_user,
+        experience_id=experience_id,
+        data=experience_data.model_dump(exclude_unset=True),
+    )
 
 
 @router.delete(
     "/experiences/{experience_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
+    status_code=204,
 )
 async def delete_experience_endpoint(
     experience_id: int,
     current_user: User = Depends(get_current_candidate),
     session: AsyncSession = Depends(get_async_session),
 ):
-    """
-    Удалить запись опыта работы из своего профиля.
-    """
-    try:
-        await delete_experience(
-            session=session,
-            user=current_user,
-            experience_id=experience_id,
-        )
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Experience not found",
-        )
+    await delete_experience(
+        session=session,
+        user=current_user,
+        experience_id=experience_id,
+    )
 
 
-# ======== Образование ========
+# ======== Education ========
 
 @router.post(
     "/educations",
     response_model=EducationRead,
-    status_code=status.HTTP_201_CREATED,
+    status_code=201,
 )
 async def add_education_endpoint(
     education_data: EducationCreate,
     current_user: User = Depends(get_current_candidate),
     session: AsyncSession = Depends(get_async_session),
 ):
-    edu = await add_education(
+    return await add_education(
         session=session,
         user=current_user,
         data=education_data.model_dump(exclude_unset=True),
     )
-    return edu
 
 
 @router.get(
@@ -206,8 +167,7 @@ async def get_my_educations_endpoint(
     current_user: User = Depends(get_current_candidate),
     session: AsyncSession = Depends(get_async_session),
 ):
-    educations = await list_educations(session=session, user=current_user)
-    return educations
+    return await list_educations(session=session, user=current_user)
 
 
 @router.patch(
@@ -216,66 +176,51 @@ async def get_my_educations_endpoint(
 )
 async def update_education_endpoint(
     education_id: int,
-    education_data: EducationCreate,  # позже можно сделать EducationUpdate
+    education_data: EducationCreate,
     current_user: User = Depends(get_current_candidate),
     session: AsyncSession = Depends(get_async_session),
 ):
-    try:
-        edu = await update_education_service(
-            session=session,
-            user=current_user,
-            education_id=education_id,
-            data=education_data.model_dump(exclude_unset=True),
-        )
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Education not found",
-        )
-    return edu
+    return await update_education_service(
+        session=session,
+        user=current_user,
+        education_id=education_id,
+        data=education_data.model_dump(exclude_unset=True),
+    )
 
 
 @router.delete(
     "/educations/{education_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
+    status_code=204,
 )
 async def delete_education_endpoint(
     education_id: int,
     current_user: User = Depends(get_current_candidate),
     session: AsyncSession = Depends(get_async_session),
 ):
-    try:
-        await delete_education_service(
-            session=session,
-            user=current_user,
-            education_id=education_id,
-        )
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Education not found",
-        )
+    await delete_education_service(
+        session=session,
+        user=current_user,
+        education_id=education_id,
+    )
 
 
-
-# ======== Навыки ========
+# ======== Skills ========
 
 @router.post(
     "/skills",
     response_model=CandidateSkillRead,
-    status_code=status.HTTP_201_CREATED,
+    status_code=201,
 )
 async def add_skill_endpoint(
     skill_data: CandidateSkillCreate,
     current_user: User = Depends(get_current_candidate),
     session: AsyncSession = Depends(get_async_session),
 ):
-    skill = await add_skill(
+    return await add_skill(
         session=session,
         user=current_user,
         data=skill_data.model_dump(exclude_unset=True),
     )
-    return skill
 
 
 @router.get(
@@ -286,51 +231,42 @@ async def get_my_skills_endpoint(
     current_user: User = Depends(get_current_candidate),
     session: AsyncSession = Depends(get_async_session),
 ):
-    skills = await list_skills(session=session, user=current_user)
-    return skills
+    return await list_skills(session=session, user=current_user)
 
 
 @router.delete(
     "/skills/{skill_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
+    status_code=204,
 )
 async def delete_skill_endpoint(
     skill_id: int,
     current_user: User = Depends(get_current_candidate),
     session: AsyncSession = Depends(get_async_session),
 ):
-    try:
-        await delete_skill_service(
-            session=session,
-            user=current_user,
-            skill_id=skill_id,
-        )
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Skill not found",
-        )
+    await delete_skill_service(
+        session=session,
+        user=current_user,
+        skill_id=skill_id,
+    )
 
 
-
-# ======== Сертификаты ========
+# ======== Certificates ========
 
 @router.post(
     "/certificates",
     response_model=CertificateRead,
-    status_code=status.HTTP_201_CREATED,
+    status_code=201,
 )
 async def add_certificate_endpoint(
     certificate_data: CertificateCreate,
     current_user: User = Depends(get_current_candidate),
     session: AsyncSession = Depends(get_async_session),
 ):
-    cert = await add_certificate(
+    return await add_certificate(
         session=session,
         user=current_user,
         data=certificate_data.model_dump(exclude_unset=True),
     )
-    return cert
 
 
 @router.get(
@@ -341,51 +277,42 @@ async def get_my_certificates_endpoint(
     current_user: User = Depends(get_current_candidate),
     session: AsyncSession = Depends(get_async_session),
 ):
-    certs = await list_certificates(session=session, user=current_user)
-    return certs
+    return await list_certificates(session=session, user=current_user)
 
 
 @router.delete(
     "/certificates/{certificate_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
+    status_code=204,
 )
 async def delete_certificate_endpoint(
     certificate_id: int,
     current_user: User = Depends(get_current_candidate),
     session: AsyncSession = Depends(get_async_session),
 ):
-    try:
-        await delete_certificate_service(
-            session=session,
-            user=current_user,
-            certificate_id=certificate_id,
-        )
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Certificate not found",
-        )
+    await delete_certificate_service(
+        session=session,
+        user=current_user,
+        certificate_id=certificate_id,
+    )
 
 
-
-# ======== Портфолио ========
+# ======== Portfolio ========
 
 @router.post(
     "/portfolio",
     response_model=PortfolioItemRead,
-    status_code=status.HTTP_201_CREATED,
+    status_code=201,
 )
 async def add_portfolio_item_endpoint(
     item_data: PortfolioItemCreate,
     current_user: User = Depends(get_current_candidate),
     session: AsyncSession = Depends(get_async_session),
 ):
-    item = await add_portfolio_item(
+    return await add_portfolio_item(
         session=session,
         user=current_user,
         data=item_data.model_dump(exclude_unset=True),
     )
-    return item
 
 
 @router.get(
@@ -396,28 +323,20 @@ async def get_my_portfolio_endpoint(
     current_user: User = Depends(get_current_candidate),
     session: AsyncSession = Depends(get_async_session),
 ):
-    items = await list_portfolio_items(session=session, user=current_user)
-    return items
+    return await list_portfolio_items(session=session, user=current_user)
 
 
 @router.delete(
     "/portfolio/{item_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
+    status_code=204,
 )
 async def delete_portfolio_item_endpoint(
     item_id: int,
     current_user: User = Depends(get_current_candidate),
     session: AsyncSession = Depends(get_async_session),
 ):
-    try:
-        await delete_portfolio_item_service(
-            session=session,
-            user=current_user,
-            item_id=item_id,
-        )
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Portfolio item not found",
-        )
-
+    await delete_portfolio_item_service(
+        session=session,
+        user=current_user,
+        item_id=item_id,
+    )
