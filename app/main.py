@@ -9,9 +9,17 @@ from app.routers import hr, candidates, admin, auth, candidate_profile, hr_candi
 from app.middleware.logging import LoggingMiddleware
 from app.middleware.token_blacklist import TokenBlacklistMiddleware
 from app.exceptions import DomainError, NotFoundError, ForbiddenError, ConflictError, ValidationError
+from fastapi.staticfiles import StaticFiles
+from app.config import settings
+
 
 app = FastAPI(title="Recruitment API")
 
+app.mount(
+    "/uploads",
+    StaticFiles(directory=settings.UPLOAD_DIR),
+    name="uploads",
+)
 # CORS
 app.add_middleware(
     CORSMiddleware,

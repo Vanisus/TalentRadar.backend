@@ -2,6 +2,9 @@ from typing import List
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import UploadFile, File, Form
+from app.schemas.certificate_upload import CertificateUploadResponse
+from app.services.candidate.certificate_upload import handle_certificate_upload
 
 from app.database import get_async_session
 from app.dependencies import get_current_candidate
@@ -360,3 +363,34 @@ async def get_resume_summary(
         session=session,
         candidate=current_user,
     )
+
+
+@router.get(
+    "/portfolio_items",
+    response_model=List[PortfolioItemRead],
+)
+async def get_my_portfolio_items(
+    current_user: User = Depends(get_current_candidate),
+    session: AsyncSession = Depends(get_async_session),
+):
+    """
+    Получить все элементы портфолио из своего профиля.
+    """
+    items = await list_portfolio_items(session=session, user=current_user)
+    return items
+
+
+@router.post("/certificates/upload", response_model=CertificateRead)
+async def upload_certificate(
+    file: UploadFile = File(...),
+    title: str | None = Form(None),
+    current_user: User = Depends(get_current_candidate),
+    session: AsyncSession = Depends(get_async_session),
+):
+    cert = await handle_certificate_upload(
+        session=session,
+        user=current_user,
+        file=file,
+        title=title,
+    )
+    return cert

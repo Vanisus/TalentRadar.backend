@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any, Dict, List, Optional
 
+# ---- Константы ----
 
 SECTION_HEADERS = {
     "experience": [
@@ -10,6 +11,8 @@ SECTION_HEADERS = {
         "опыт",
         "professional experience",
         "experience",
+        "work experience",
+        "employment history",
     ],
     "education": [
         "образование",
@@ -35,12 +38,43 @@ SECTION_HEADERS = {
     ],
 }
 
+MONTHS_MAP = {
+    # русские
+    "январь": 1, "января": 1,
+    "февраль": 2, "февраля": 2,
+    "март": 3, "марта": 3,
+    "апрель": 4, "апреля": 4,
+    "май": 5, "мая": 5,
+    "июнь": 6, "июня": 6,
+    "июль": 7, "июля": 7,
+    "август": 8, "августа": 8,
+    "сентябрь": 9, "сентября": 9,
+    "октябрь": 10, "октября": 10,
+    "ноябрь": 11, "ноября": 11,
+    "декабрь": 12, "декабря": 12,
+    # английские
+    "january": 1, "jan": 1,
+    "february": 2, "feb": 2,
+    "march": 3, "mar": 3,
+    "april": 4, "apr": 4,
+    "may": 5,
+    "june": 6, "jun": 6,
+    "july": 7, "jul": 7,
+    "august": 8, "aug": 8,
+    "september": 9, "sep": 9, "sept": 9,
+    "october": 10, "oct": 10,
+    "november": 11, "nov": 11,
+    "december": 12, "dec": 12,
+}
+
 
 @dataclass
 class Section:
     name: str
     text: str
 
+
+# ---- Вспомогательные функции ----
 
 def _normalize_text(text: str) -> str:
     return re.sub(r"\r\n?", "\n", text).strip()
@@ -54,10 +88,11 @@ def _split_sections(resume_text: str) -> List[Section]:
 
     header_patterns: List[str] = []
     for key, headers in SECTION_HEADERS.items():
-        for h in headers:
-            header_patterns.append(
-                rf"(?P<{key}>^\s*{re.escape(h)}\s*:?\s*$)"
-            )
+        escaped_headers = [re.escape(h) for h in headers]
+        alternatives = "|".join(escaped_headers)
+        header_patterns.append(
+            rf"(?P<{key}>^\s*(?:{alternatives})\s*:?\s*$)"
+        )
 
     if not header_patterns:
         return [Section(name="root", text=text)]
@@ -87,31 +122,72 @@ def _split_sections(resume_text: str) -> List[Section]:
     return sections
 
 
+def _parse_month_year_str(s: str | None) -> tuple[Optional[int], Optional[int]]:
+    """
+    Парсер строки даты в (month, year).
+    Поддерживаем:
+      - '03.2020'
+      - '2020'
+      - 'январь 2020', 'января 2020'
+      - 'January 2020', 'Jan 2020'
+    """
+    if not s:
+        return None, None
+
+    s = s.strip().lower()
+    s = s.replace("г.", "").replace("год", "").replace("года", "").strip()
+
+    # чисто цифры: '03.2020' или '2020'
+    if "." in s or s.isdigit():
+        try:
+            if "." in s:
+                m_str, y_str = s.split(".", 1)
+                m = int(m_str)
+                y = int(y_str)
+                if 1 <= m <= 12:
+                    return m, y
+                return 1, y
+            # только год
+            y = int(s)
+            return 1, y
+        except ValueError:
+            return None, None
+
+    # 'январь 2020', 'января 2020', 'january 2020', 'jan 2020'
+    parts = s.split()
+    if len(parts) >= 2:
+        month_name = parts[0]
+        year_part = parts[1]
+        m = MONTHS_MAP.get(month_name)
+        try:
+            y = int(year_part)
+        except ValueError:
+            return None, None
+        if m is None:
+            m = 1
+        return m, y
+
+    return None, None
+
+
+# ---- Парсеры секций ----
+
 def _parse_experience_section(text: str) -> List[Dict[str, Any]]:
     """
     Очень грубый парсер опыта:
     - опыт разделён пустыми строками
     - первая строка блока: должность + компания (эвристика)
-    - даты формата 'ММ.ГГГГ' или 'ГГГГ'
+    - даты: 'ММ.ГГГГ', 'ГГГГ', 'январь 2020', 'January 2020', '... — по настоящее время'
     """
     blocks = [b.strip() for b in text.split("\n\n") if b.strip()]
     experiences: List[Dict[str, Any]] = []
 
     date_pattern = re.compile(
-        r"(?P<start>(\d{2}\.\d{4}|\d{4}))\s*[-–—]?\s*(?P<end>(\d{2}\.\d{4}|\d{4}|по настоящее время|настоящее время|по н\.в\.)|)?",
+        r"(?P<start>(\d{2}\.\d{4}|\d{4}|[А-Яа-яA-Za-z]+ \d{4}))"
+        r"\s*[-–—]?\s*"
+        r"(?P<end>(\d{2}\.\d{4}|\d{4}|[А-Яа-яA-Za-z]+ \d{4}|по настоящее время|настоящее время|по н\.в\.)|)?",
         re.IGNORECASE,
     )
-
-    def _parse_date(s: str | None) -> Optional[date]:
-        if not s:
-            return None
-        try:
-            if "." in s:
-                m, y = s.split(".")
-                return date(int(y), int(m), 1)
-            return date(int(s), 1, 1)
-        except ValueError:
-            return None
 
     for block in blocks:
         lines = [l.strip() for l in block.split("\n") if l.strip()]
@@ -138,17 +214,26 @@ def _parse_experience_section(text: str) -> List[Dict[str, Any]]:
             start_raw = dates_match.group("start")
             end_raw = dates_match.group("end")
 
-            start_date = _parse_date(start_raw)
+            sm, sy = _parse_month_year_str(start_raw)
+            if sy is not None:
+                start_date = date(sy, sm or 1, 1)
 
             if end_raw:
                 end_raw_norm = end_raw.lower()
-                if "настоя" in end_raw_norm:
+                if "настоя" in end_raw_norm or "н.в" in end_raw_norm:
                     is_current = True
                     end_date = None
                 else:
-                    end_date = _parse_date(end_raw)
+                    em, ey = _parse_month_year_str(end_raw)
+                    if ey is not None:
+                        end_date = date(ey, em or 1, 1)
 
         description = "\n".join(lines[1:]).strip() or None
+
+        # если не смогли вытащить год начала — пропускаем блок,
+        # чтобы не ломать NOT NULL по start_date
+        if start_date is None:
+            continue
 
         experiences.append(
             {
@@ -194,7 +279,9 @@ def _parse_education_section(text: str) -> List[Dict[str, Any]]:
                 current["institution"] = line
             else:
                 field = current.get("field_of_study")
-                current["field_of_study"] = f"{field} {line}".strip() if field else line
+                current["field_of_study"] = (
+                    f"{field} {line}".strip() if field else line
+                )
 
     if current:
         educations.append(current)
@@ -209,15 +296,36 @@ def _parse_education_section(text: str) -> List[Dict[str, Any]]:
 def _parse_skills_section(text: str) -> List[Dict[str, Any]]:
     """
     Навыки: через запятую или по строкам.
+    Фильтруем слишком длинные куски, чтобы не тащить целые абзацы.
     """
     skills: List[Dict[str, Any]] = []
 
-    if "," in text:
-        parts = [p.strip() for p in text.replace("\n", " ").split(",") if p.strip()]
-    else:
-        parts = [l.strip() for l in text.split("\n") if l.strip()]
+    normalized = re.sub(r"\s+", " ", text).strip()
 
-    for p in parts:
+    if "," in normalized:
+        raw_parts = normalized.split(",")
+    else:
+        raw_parts = [l.strip() for l in text.split("\n")]
+
+    MAX_SKILL_LEN = 100
+    MAX_ACCEPTABLE_LEN = 80
+
+    for raw in raw_parts:
+        p = raw.strip()
+        if not p:
+            continue
+
+        if len(p) > MAX_ACCEPTABLE_LEN:
+            continue
+
+        p = p.rstrip(";. ")
+
+        if not p:
+            continue
+
+        if len(p) > MAX_SKILL_LEN:
+            p = p[:MAX_SKILL_LEN]
+
         skills.append({"name": p, "level": None})
 
     return skills

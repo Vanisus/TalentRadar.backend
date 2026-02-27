@@ -64,6 +64,7 @@ class CertificateBase(BaseModel):
     issuer: Optional[str] = Field(None, max_length=200)
     issue_date: Optional[date] = None
     file_path: Optional[str] = None
+    preview_path: Optional[str] = None
 
 
 class CertificateCreate(CertificateBase):
@@ -82,6 +83,7 @@ class PortfolioItemBase(BaseModel):
     description: Optional[str] = None
     url: Optional[str] = None
     file_path: Optional[str] = None
+    preview_path: Optional[str] = None
 
 
 class PortfolioItemCreate(PortfolioItemBase):

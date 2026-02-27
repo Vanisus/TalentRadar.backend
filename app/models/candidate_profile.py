@@ -143,6 +143,7 @@ class Certificate(Base):
     issuer: Mapped[str | None] = mapped_column(String(200), nullable=True)
     issue_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     file_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    preview_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     profile: Mapped["CandidateProfile"] = relationship(
         back_populates="certificates",
@@ -162,6 +163,7 @@ class PortfolioItem(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     file_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    preview_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     profile: Mapped["CandidateProfile"] = relationship(
         back_populates="portfolio_items",
