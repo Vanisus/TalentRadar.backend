@@ -7,25 +7,25 @@ from typing import Any, Dict, List, Optional
 
 SECTION_HEADERS = {
     "experience": [
-        "опыт работы",
-        "опыт",
-        "professional experience",
-        "experience",
-        "work experience",
-        "employment history",
+    "опыт работы",
+    "опыт работы —",
+    "experience",
+    "work experience",
+    "employment history",
     ],
     "education": [
         "образование",
         "education",
     ],
     "skills": [
-        "ключевые навыки",
         "навыки",
         "skills",
         "technical skills",
     ],
     "about": [
+        "дополнительная информация",
         "о себе",
+        "обо мне",
         "summary",
         "about me",
         "profile",
@@ -82,7 +82,8 @@ def _normalize_text(text: str) -> str:
 
 def _split_sections(resume_text: str) -> List[Section]:
     """
-    Грубое разбиение резюме на секции по заголовкам.
+    Разбиваем резюме на крупные секции по заголовкам.
+    Для твоего резюме важны: Опыт работы, Образование, Навыки, Доп. информация.
     """
     text = _normalize_text(resume_text)
 
@@ -137,7 +138,7 @@ def _parse_month_year_str(s: str | None) -> tuple[Optional[int], Optional[int]]:
     s = s.strip().lower()
     s = s.replace("г.", "").replace("год", "").replace("года", "").strip()
 
-    # чисто цифры: '03.2020' или '2020'
+    # '03.2020' или '2020'
     if "." in s or s.isdigit():
         try:
             if "." in s:
@@ -147,13 +148,12 @@ def _parse_month_year_str(s: str | None) -> tuple[Optional[int], Optional[int]]:
                 if 1 <= m <= 12:
                     return m, y
                 return 1, y
-            # только год
             y = int(s)
             return 1, y
         except ValueError:
             return None, None
 
-    # 'январь 2020', 'января 2020', 'january 2020', 'jan 2020'
+    # 'январь 2020', 'January 2020', ...
     parts = s.split()
     if len(parts) >= 2:
         month_name = parts[0]
@@ -174,70 +174,116 @@ def _parse_month_year_str(s: str | None) -> tuple[Optional[int], Optional[int]]:
 
 def _parse_experience_section(text: str) -> List[Dict[str, Any]]:
     """
-    Очень грубый парсер опыта:
-    - опыт разделён пустыми строками
-    - первая строка блока: должность + компания (эвристика)
-    - даты: 'ММ.ГГГГ', 'ГГГГ', 'январь 2020', 'January 2020', '... — по настоящее время'
+    Парсер опыта под hh-формат:
+    - ищем первую строку 'Опыт работы' и парсим только после неё;
+    - блок:
+        <Месяц ГГГГ [— ...]>
+        [настоящее время]
+        [строка типа '1 год 5 месяцев']
+        <company>
+        <position>
+        <описание...>
     """
-    blocks = [b.strip() for b in text.split("\n\n") if b.strip()]
-    experiences: List[Dict[str, Any]] = []
+    all_lines = [l.strip() for l in text.split("\n")]
 
-    date_pattern = re.compile(
-        r"(?P<start>(\d{2}\.\d{4}|\d{4}|[А-Яа-яA-Za-z]+ \d{4}))"
-        r"\s*[-–—]?\s*"
-        r"(?P<end>(\d{2}\.\d{4}|\d{4}|[А-Яа-яA-Za-z]+ \d{4}|по настоящее время|настоящее время|по н\.в\.)|)?",
+    # 0) ограничимся только текстом ПОСЛЕ 'Опыт работы'
+    start_experience_idx = None
+    for idx, line in enumerate(all_lines):
+        if line.lower().startswith("опыт работы"):
+            start_experience_idx = idx + 1
+            break
+
+    if start_experience_idx is None:
+        return []
+
+    lines = [l for l in all_lines[start_experience_idx:] if l.strip()]
+    experiences: List[Dict[str, Any]] = []
+    n = len(lines)
+
+    # Строка, которая выглядит как 'Октябрь 2024', 'Июнь 2023' и т.п.
+    month_name_pattern = r"[А-Яа-яA-Za-z]+"
+    date_line_pattern = re.compile(
+        rf"^(?P<start>{month_name_pattern}\s+\d{{4}})(\s*[—-]\s*(?P<end>{month_name_pattern}\s+\d{{4}}))?$",
         re.IGNORECASE,
     )
 
-    for block in blocks:
-        lines = [l.strip() for l in block.split("\n") if l.strip()]
-        if not lines:
+    i = 0
+    while i < n:
+        m = date_line_pattern.match(lines[i])
+        if not m:
+            i += 1
             continue
 
-        title_company = lines[0]
-        position = title_company
-        company: Optional[str] = None
+        start_raw = m.group("start")
+        end_raw = m.group("end")
 
-        for sep in ("—", "-", "–", ","):
-            if sep in title_company:
-                left, right = title_company.split(sep, 1)
-                position = left.strip()
-                company = right.strip()
+        # возможно, на следующей строке стоит 'настоящее время'
+        is_current = False
+        if i + 1 < n and "настоящее время" in lines[i + 1].lower():
+            is_current = True
+            end_raw = lines[i + 1]
+            i += 1
+
+        # пропускаем строку стажа '1 год 5 месяцев' и т.п.
+        if i + 1 < n and re.search(
+            r"\d+\s+год|\d+\s+года|\d+\s+лет|\d+\s+месяц|\d+\s+месяцев",
+            lines[i + 1],
+            re.IGNORECASE,
+        ):
+            i += 1
+
+        # company
+        i += 1
+        if i >= n:
+            break
+        company = lines[i]
+
+        # position
+        i += 1
+        if i >= n:
+            break
+        position = lines[i]
+
+        # описание
+        i += 1
+        description_lines: List[str] = []
+        while i < n and not date_line_pattern.match(lines[i]):
+            # останавливаемся, если встретили заголовок другой секции
+            if any(
+                lines[i].lower().startswith(h.lower())
+                for h_list in SECTION_HEADERS.values()
+                for h in h_list
+            ):
                 break
+            description_lines.append(lines[i])
+            i += 1
 
-        dates_match = date_pattern.search(block)
+        # парсим даты
+        sm, sy = _parse_month_year_str(start_raw)
         start_date: Optional[date] = None
         end_date: Optional[date] = None
-        is_current = False
 
-        if dates_match:
-            start_raw = dates_match.group("start")
-            end_raw = dates_match.group("end")
+        if sy is not None:
+            start_date = date(sy, sm or 1, 1)
 
-            sm, sy = _parse_month_year_str(start_raw)
-            if sy is not None:
-                start_date = date(sy, sm or 1, 1)
+        if end_raw:
+            end_norm = end_raw.lower()
+            if "настоя" in end_norm or "н.в" in end_norm:
+                is_current = True
+                end_date = None
+            else:
+                em, ey = _parse_month_year_str(end_raw)
+                if ey is not None:
+                    end_date = date(ey, em or 1, 1)
 
-            if end_raw:
-                end_raw_norm = end_raw.lower()
-                if "настоя" in end_raw_norm or "н.в" in end_raw_norm:
-                    is_current = True
-                    end_date = None
-                else:
-                    em, ey = _parse_month_year_str(end_raw)
-                    if ey is not None:
-                        end_date = date(ey, em or 1, 1)
-
-        description = "\n".join(lines[1:]).strip() or None
-
-        # если не смогли вытащить год начала — пропускаем блок,
-        # чтобы не ломать NOT NULL по start_date
         if start_date is None:
             continue
 
+        description = "\n".join(description_lines).strip() or None
+
         experiences.append(
             {
-                "company": company or "",
+                "company": company,
                 "position": position,
                 "description": description,
                 "start_date": start_date,
@@ -251,74 +297,168 @@ def _parse_experience_section(text: str) -> List[Dict[str, Any]]:
 
 def _parse_education_section(text: str) -> List[Dict[str, Any]]:
     """
-    Простейший парсер образования:
-    - ищем годы
-    - собираем остальной текст как institution/field_of_study
+    Парсер образования под твой кейс hh.ru:
+    Образование
+    Бакалавр
+    2024
+    Бакалавр
+    [строки вуза...]
+    Программная инженерия, Разработчик
+
+    + фильтрация служебных строк 'Резюме обновлено ...'.
     """
-    lines = [l.strip() for l in text.split("\n") if l.strip()]
+    raw_lines = [l.strip() for l in text.split("\n") if l.strip()]
+
+    # выкидываем служебные строки hh
+    lines = [
+        l for l in raw_lines
+        if not l.lower().startswith("резюме обновлено")
+    ]
+
     educations: List[Dict[str, Any]] = []
+    if not lines:
+        return educations
 
-    year_pattern = re.compile(r"(19\d{2}|20\d{2})")
+    year_re = re.compile(r"^(19\d{2}|20\d{2})$")
 
-    current: Dict[str, Any] = {}
-    for line in lines:
-        year_nums = year_pattern.findall(line)
+    degree: Optional[str] = None
+    start_year: Optional[int] = None
+    end_year: Optional[int] = None
+    institution_lines: List[str] = []
+    field_of_study: Optional[str] = None
 
-        if year_nums:
-            if current:
-                educations.append(current)
-                current = {}
+    i = 0
+    n = len(lines)
 
-            current["start_year"] = int(year_nums[0])
-            if len(year_nums) > 1:
-                current["end_year"] = int(year_nums[1])
+    # первая строка после 'Образование' — степень
+    if i < n and not year_re.match(lines[i]):
+        degree = lines[i]
+        i += 1
 
-            current.setdefault("institution", line)
+    # следующая строка может быть либо чистым годом,
+    # либо '2024 Саратовский ...'
+    if i < n:
+        parts = lines[i].split(" ", 1)
+        if year_re.match(parts[0]):
+            year_val = int(parts[0])
+            start_year = year_val
+            end_year = year_val
+            # если дальше есть текст — он часть вуза
+            if len(parts) > 1 and parts[1].strip():
+                institution_lines.append(parts[1].strip())
+            i += 1
+
+    # иногда степень дублируется после года
+    if i < n and not year_re.match(lines[i]):
+        if degree is None:
+            degree = lines[i]
         else:
-            if "institution" not in current:
-                current["institution"] = line
-            else:
-                field = current.get("field_of_study")
-                current["field_of_study"] = (
-                    f"{field} {line}".strip() if field else line
-                )
+            # скорее всего это уже вуз
+            institution_lines.append(lines[i])
+        i += 1
 
-    if current:
-        educations.append(current)
+    # остальное: строки вуза + последняя строка как field_of_study
+    remaining = lines[i:]
+    if remaining:
+        if len(remaining) > 1:
+            institution_lines.extend(remaining[:-1])
+            field_of_study = remaining[-1]
+        else:
+            institution_lines.extend(remaining)
 
-    for edu in educations:
-        edu.setdefault("degree", None)
-        edu.setdefault("field_of_study", None)
+    institution = " ".join(institution_lines).strip() if institution_lines else None
+
+    if institution:
+        educations.append(
+            {
+                "institution": institution,
+                "degree": degree,
+                "field_of_study": field_of_study,
+                "start_year": start_year,
+                "end_year": end_year,
+            }
+        )
 
     return educations
 
 
+
 def _parse_skills_section(text: str) -> List[Dict[str, Any]]:
     """
-    Навыки: через запятую или по строкам.
-    Фильтруем слишком длинные куски, чтобы не тащить целые абзацы.
+    Навыки под формат hh.ru:
+    - игнорируем блок 'Знание языков' и строки с уровнями языков;
+    - забираем всё, что идёт после слова 'Навыки' до 'Опыт вождения';
+    - режем по 2+ пробелам, оставляя фразы (REST API, Базы данных и т.п.);
+    - убираем дубли.
     """
     skills: List[Dict[str, Any]] = []
 
-    normalized = re.sub(r"\s+", " ", text).strip()
+    lines = [l.rstrip() for l in text.split("\n")]
 
-    if "," in normalized:
-        raw_parts = normalized.split(",")
+    # 1) Сужаемся до блока между вторым 'Навыки' и 'Опыт вождения'
+    start_idx = None
+    seen_nav = 0
+    for idx, line in enumerate(lines):
+        if line.strip().lower().startswith("навыки"):
+            seen_nav += 1
+            if seen_nav == 2:
+                start_idx = idx
+                break
+
+    if start_idx is None:
+        relevant_lines = lines
     else:
-        raw_parts = [l.strip() for l in text.split("\n")]
+        relevant_lines = lines[start_idx :]
+
+    cut_lines: List[str] = []
+    for line in relevant_lines:
+        if line.strip().lower().startswith("опыт вождения"):
+            break
+        # выкидываем строку 'Знание языков' и строки с языками (Английский — B1 — Средний и т.п.)
+        low = line.strip().lower()
+        if low.startswith("знание языков"):
+            continue
+        if "— b1" in low or "— c1" in low or "— a2" in low:
+            # грубая эвристика для строк с уровнями языков
+            continue
+        cut_lines.append(line)
+
+    # 2) Разбираем строки:
+    # - если строка начинается с 'Навыки', берём только часть после этого слова;
+    # - остальные строки используем целиком.
+    raw_parts: List[str] = []
+    for line in cut_lines:
+        stripped = line.strip()
+        if not stripped:
+            continue
+
+        low = stripped.lower()
+        if low.startswith("навыки"):
+            # берём всё после слова 'Навыки'
+            after = stripped[len("Навыки") :].strip()
+            if not after:
+                continue
+            # режем по 2+ пробелам, чтобы получить группы
+            parts = [p.strip() for p in re.split(r"\s{2,}", after) if p.strip()]
+            raw_parts.extend(parts)
+        else:
+            # для остальных строк: режем по 2+ пробелам, оставляя фразы
+            parts = [p.strip() for p in re.split(r"\s{2,}", stripped) if p.strip()]
+            raw_parts.extend(parts)
 
     MAX_SKILL_LEN = 100
     MAX_ACCEPTABLE_LEN = 80
 
-    for raw in raw_parts:
-        p = raw.strip()
+    seen: set[str] = set()
+    ordered_skills: List[str] = []
+
+    for p in raw_parts:
         if not p:
             continue
-
         if len(p) > MAX_ACCEPTABLE_LEN:
             continue
 
-        p = p.rstrip(";. ")
+        p = p.rstrip(";.,")
 
         if not p:
             continue
@@ -326,18 +466,26 @@ def _parse_skills_section(text: str) -> List[Dict[str, Any]]:
         if len(p) > MAX_SKILL_LEN:
             p = p[:MAX_SKILL_LEN]
 
-        skills.append({"name": p, "level": None})
+        key = p.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        ordered_skills.append(p)
 
-    return skills
+    return [{"name": name, "level": None} for name in ordered_skills]
 
 
 def _parse_about_section(text: str) -> Dict[str, Any]:
+    """
+    'Дополнительная информация' / 'Обо мне' → один большой текст в about_me.
+    """
     return {"about_me": text.strip()}
 
 
 def _parse_certificates_section(text: str) -> List[Dict[str, Any]]:
     """
     Каждая строка = сертификат.
+    Сейчас в твоём резюме явного блока сертификатов нет, но оставим задел.
     """
     lines = [l.strip() for l in text.split("\n") if l.strip()]
     return [
@@ -351,31 +499,26 @@ def _parse_certificates_section(text: str) -> List[Dict[str, Any]]:
     ]
 
 
+# ---- Входная точка ----
+
 def build_profile_from_resume_text(resume_text: str) -> Dict[str, Any]:
     """
     Построить структурированный профиль из текста резюме.
-    Формат:
-      {
-        "profile": {...},
-        "experiences": [...],
-        "educations": [...],
-        "skills": [...],
-        "certificates": [...],
-      }
     """
     sections = _split_sections(resume_text)
 
     profile: Dict[str, Any] = {}
-    experiences: List[Dict[str, Any]] = []
     educations: List[Dict[str, Any]] = []
     skills: List[Dict[str, Any]] = []
     certificates: List[Dict[str, Any]] = []
 
+    # 1) Опыт всегда парсим из ВСЕГО текста, чтобы не зависеть от заголовка
+    experiences = _parse_experience_section(resume_text)
+
+    # 2) Остальное — по секциям
     for section in sections:
         if section.name == "about":
             profile.update(_parse_about_section(section.text))
-        elif section.name == "experience":
-            experiences.extend(_parse_experience_section(section.text))
         elif section.name == "education":
             educations.extend(_parse_education_section(section.text))
         elif section.name == "skills":
@@ -392,3 +535,4 @@ def build_profile_from_resume_text(resume_text: str) -> Dict[str, Any]:
         "skills": skills,
         "certificates": certificates,
     }
+
