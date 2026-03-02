@@ -10,16 +10,16 @@ from app.models import Application
 from app.models.user import User
 from app.schemas.application import ApplicationCreate, ApplicationRead
 from app.schemas.notification import NotificationRead
-from app.schemas.resume_recommendation import ResumeRecommendation
+from app.schemas.resume_recommendation import ResumeRecommendationsRead
 from app.schemas.vacancy import VacancyRead, VacancyWithMatchScore
 from app.services.candidate.applications import (
     create_application_for_candidate,
     get_open_vacancies,
     get_recommended_vacancies_for_candidate,
-    get_resume_recommendations_for_candidate,
     get_vacancy_for_candidate,
 )
-from app.services.candidate.candidates import handle_resume_upload
+from app.services.resumes.resume_recommendations import get_resume_recommendations_for_candidate
+from app.services.candidate.resume_center import handle_resume_upload
 from app.services.notifications.notifications import (
     get_notifications_for_user,
     mark_notification_as_read_for_user,
@@ -117,7 +117,7 @@ async def get_recommended_vacancies(
     )
 
 
-@router.get("/resume/recommendations", response_model=ResumeRecommendation)
+@router.get("/resume/recommendations", response_model=ResumeRecommendationsRead)
 async def get_resume_recommendations(
     current_user: User = Depends(get_current_candidate),
     session: AsyncSession = Depends(get_async_session),

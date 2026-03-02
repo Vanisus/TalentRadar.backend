@@ -32,6 +32,7 @@ class CandidateProfile(Base):
     phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
     telegram: Mapped[str | None] = mapped_column(String(100), nullable=True)
     birth_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    resume_file_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

@@ -9,7 +9,7 @@ from app.models.notification import Notification
 from app.models.user import User
 from app.models.vacancy import Vacancy
 from app.schemas.application import ApplicationCreate
-from app.schemas.resume_recommendation import ResumeRecommendation
+from app.schemas.resume_recommendation import ResumeRecommendationsRead
 from app.schemas.vacancy import VacancyWithMatchScore
 from app.services.analytics.match_score import calculate_match_score
 from app.services.resumes.resume_recommendations import analyze_resume_improvements
@@ -178,7 +178,7 @@ async def get_recommended_vacancies_for_candidate(
 async def get_resume_recommendations_for_candidate(
     session: AsyncSession,
     current_user: User,
-) -> ResumeRecommendation:
+) -> ResumeRecommendationsRead:
     if not current_user.resume_text:
         raise ValidationError(
             message="Please upload your resume first to get recommendations",

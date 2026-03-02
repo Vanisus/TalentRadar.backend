@@ -46,6 +46,7 @@ from app.services.candidate.candidate_profile import (
     list_portfolio_items,
     delete_portfolio_item_service,
 )
+from app.services.resumes.resume_status import get_resume_status_for_candidate
 
 router = APIRouter(
     prefix="/candidates/profile",
@@ -80,7 +81,15 @@ async def update_my_profile(
     )
     return profile
 
-
+@router.get("/resume/status")
+async def get_resume_status(
+    current_user: User = Depends(get_current_candidate),
+    session: AsyncSession = Depends(get_async_session),
+):
+    return await get_resume_status_for_candidate(
+        session=session,
+        user=current_user,
+    )
 # ======== Experience ========
 
 @router.post(
