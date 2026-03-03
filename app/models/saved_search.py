@@ -1,7 +1,6 @@
 # app/models/saved_search.py
-from datetime import UTC, datetime
 
-from sqlalchemy import Column, Integer, ForeignKey, String, JSON, DateTime
+from sqlalchemy import Column, Integer, ForeignKey, String, JSON, DateTime, func
 
 from app.database import Base
 
@@ -13,4 +12,4 @@ class SavedCandidateSearch(Base):
     hr_id = Column(ForeignKey("users.id"), nullable=False)
     name = Column(String, nullable=False)
     params = Column(JSON, nullable=False)
-    created_at = Column(DateTime, default=datetime.now(UTC))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

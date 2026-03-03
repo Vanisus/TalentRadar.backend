@@ -80,8 +80,7 @@ async def get_candidate_profile_for_hr(
 )
 async def get_candidate_notes(
     candidate_id: int,
-    current_hr: User = Depends(get_current_hr),
-    session: AsyncSession = Depends(get_async_session),
+        session: AsyncSession = Depends(get_async_session),
 ):
     return await list_candidate_notes(session=session, candidate_id=candidate_id)
 

@@ -1,7 +1,6 @@
 # app/models/candidate_tag.py
-from datetime import datetime, UTC
-
 from sqlalchemy import Column, ForeignKey, Integer, String, DateTime
+from sqlalchemy.sql import func
 
 from app.database import Base
 
@@ -13,4 +12,4 @@ class CandidateTag(Base):
     candidate_id = Column(ForeignKey("users.id"), nullable=False)
     hr_id = Column(ForeignKey("users.id"), nullable=False)
     name = Column(String, nullable=False)
-    created_at = Column(DateTime, default=datetime.now(UTC))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -49,3 +50,6 @@ class CandidateNote(Base):
         foreign_keys=[hr_id],
         lazy="joined",
     )
+    @hybrid_property
+    def author_name(self) -> str | None:
+        return self.hr.full_name if self.hr else None

@@ -13,7 +13,7 @@ class CandidateSearchFilters(BaseModel):
 
 
 class CandidateSearchResult(BaseModel):
-    id: int
+    user_id: int
     email: str
     full_name: Optional[str] = None
     has_resume: bool = Field(..., description="Есть ли загруженное резюме")

@@ -13,12 +13,21 @@ class CandidateNoteCreate(CandidateNoteBase):
     pass
 
 
-class CandidateNoteRead(CandidateNoteBase):
+class CandidateNoteAuthor(BaseModel):
     id: int
-    candidate_id: int
-    hr_id: int
+    full_name: str | None
+
+    class Config:
+        from_attributes = True
+
+
+class CandidateNoteRead(BaseModel):
+    id: int
+    title: str | None
+    body: str
     created_at: datetime
     updated_at: datetime
+    hr: CandidateNoteAuthor
 
     class Config:
         from_attributes = True

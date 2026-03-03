@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -135,3 +135,46 @@ async def update_application_status_for_hr(
     await session.commit()
 
     return application
+
+
+async def get_all_applications_for_hr(
+    session: AsyncSession,
+    hr: User,
+    status: Optional[ApplicationStatus] = None,
+) -> List[Dict[str, Any]]:
+    """
+    Все отклики по всем вакансиям текущего HR,
+    с опциональной фильтрацией по статусу.
+    """
+    query = (
+        select(Application, User, Vacancy)
+        .join(User, Application.candidate_id == User.id)
+        .join(Vacancy, Application.vacancy_id == Vacancy.id)
+        .where(Vacancy.hr_id == hr.id)
+        .order_by(Application.created_at.desc())
+    )
+
+    if status is not None:
+        query = query.where(Application.status == status)
+
+    result = await session.execute(query)
+
+    applications_data: List[Dict[str, Any]] = []
+    for application, candidate, vacancy in result.all():
+        applications_data.append(
+            {
+                "id": application.id,
+                "vacancy_id": vacancy.id,
+                "vacancy_title": vacancy.title,
+                "candidate_id": candidate.id,
+                "candidate_email": candidate.email,
+                "candidate_full_name": candidate.full_name,
+                "status": application.status.value,
+                "match_score": application.match_score,
+                "created_at": application.created_at,
+                "updated_at": application.updated_at,
+                "resume_path": candidate.resume_path,
+            }
+        )
+
+    return applications_data

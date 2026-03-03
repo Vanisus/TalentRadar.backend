@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_async_session
 from app.dependencies import get_current_hr
-from app.models.application import Application
+from app.models.application import Application, ApplicationStatus
 from app.models.user import User
 from app.models.user import User as CandidateUser
 from app.schemas.application import ApplicationStatusUpdate, ApplicationRead
@@ -34,7 +34,7 @@ from app.services.analytics.hr_analytics import get_vacancy_analytics_for_hr
 from app.services.candidate.candidate_analysis import analyze_candidate_match
 from app.services.hr.hr_applications import (
     get_vacancy_applications_for_hr,
-    update_application_status_for_hr,
+    update_application_status_for_hr, get_all_applications_for_hr,
 )
 from app.services.hr.hr_saved_searches import (
     create_saved_search_for_hr,
@@ -164,6 +164,27 @@ async def update_application_status(
         new_status=data.status,
     )
     return application
+
+
+@router.get("/applications", response_model=List[ApplicationRead])
+async def get_all_applications(
+    status: Optional[ApplicationStatus] = Query(
+        None,
+        description="Фильтр по статусу (pending, under_review, accepted, rejected)",
+    ),
+    current_user: User = Depends(get_current_hr),
+    session: AsyncSession = Depends(get_async_session),
+):
+    """
+    Все отклики по всем вакансиям текущего HR.
+    Опционально фильтровать по статусу.
+    """
+    return await get_all_applications_for_hr(
+        session=session,
+        hr=current_user,
+        status=status,
+    )
+
 
 
 # ==================== Аналитика ====================

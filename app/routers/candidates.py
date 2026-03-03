@@ -131,11 +131,12 @@ async def get_resume_recommendations(
 @router.get("/vacancies/{vacancy_id}", response_model=VacancyRead)
 async def get_open_vacancy(
     vacancy_id: int,
-    current_user: User = Depends(get_current_candidate),
     session: AsyncSession = Depends(get_async_session),
+    current_candidate: User = Depends(get_current_candidate),
 ):
-    return await get_vacancy_for_candidate(
+    vacancy = await get_vacancy_for_candidate(
         session=session,
-        candidate=current_user,
         vacancy_id=vacancy_id,
     )
+    return vacancy
+
