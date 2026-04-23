@@ -62,6 +62,9 @@ from app.services.notifications.notifications import (
     mark_notification_as_read_for_user,
 )
 
+from app.services.llm.application_analysis import analyze_application_with_llm
+
+
 router = APIRouter(prefix="/hr", tags=["HR"])
 
 
@@ -521,4 +524,20 @@ async def get_hr_dashboard_view(
         hr=current_user,
         days_new=days_new,
         days_stale=days_stale,
+    )
+
+@router.post("/applications/{application_id}/llm-analyze")
+async def llm_analyze_application(
+    application_id: int,
+    current_user: User = Depends(get_current_hr),
+    session: AsyncSession = Depends(get_async_session),
+):
+    """
+    Запустить LLM-анализ конкретной заявки.
+    Результат — сохраняется в match_summary и (опционально) обновляет match_score.
+    """
+    return await analyze_application_with_llm(
+        session=session,
+        hr=current_user,
+        application_id=application_id,
     )

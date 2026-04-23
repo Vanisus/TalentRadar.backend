@@ -15,6 +15,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
@@ -26,23 +27,59 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    restart: unless-stopped
+
+  llm-service:
+    build:
+      context: ./llm-service
+    container_name: recruitment_llm
+    ports:
+      - "8001:8001"
+    environment:
+      MODEL_DIR: /models/qwen35_9b_hrmatch_merged
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+    volumes:
+      - ./llm-service:/app
+      - ./models/qwen35_9b_hrmatch_merged:/models/qwen35_9b_hrmatch_merged:ro
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8001/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
 
   app:
-    build: .
+    build:
+      context: ./backend
     container_name: recruitment_api
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
-      - .:/code
-      - ./uploads:/code/uploads
-      - ./logs:/code/logs
+      - ./backend:/code
+      - ./backend/uploads:/code/uploads
+      - ./backend/logs:/code/logs
     ports:
       - "8000:8000"
     env_file:
-      - .env
+      - ./backend/.env
+    environment:
+      LLM_SERVICE_URL: http://llm-service:8001
+      WATCHFILES_FORCE_POLLING: "true"
     depends_on:
       db:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      llm-service:
         condition: service_healthy
     restart: on-failure
 
