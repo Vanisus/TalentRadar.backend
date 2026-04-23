@@ -3506,3 +3506,596 @@ WHERE candidate_profiles.user_id = $1::INTEGER ORDER BY certificates.issue_date 
 2026-04-23 10:54:29,713 | INFO | GET /candidates/profile/skills | Status: 200 | User: anonymous | Time: 0.005s
 2026-04-23 10:54:29,713 | INFO | ROLLBACK
 2026-04-23 10:54:29,713 | INFO | ROLLBACK
+2026-04-23 12:15:08,215 | INFO | select pg_catalog.version()
+2026-04-23 12:15:08,215 | INFO | [raw sql] ()
+2026-04-23 12:15:08,218 | INFO | select current_schema()
+2026-04-23 12:15:08,218 | INFO | [raw sql] ()
+2026-04-23 12:15:08,221 | INFO | show standard_conforming_strings
+2026-04-23 12:15:08,221 | INFO | [raw sql] ()
+2026-04-23 12:15:08,222 | INFO | BEGIN (implicit)
+2026-04-23 12:15:08,240 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.email = $1::VARCHAR
+2026-04-23 12:15:08,240 | INFO | [generated in 0.00017s] ('ieremin755@gmail.com',)
+2026-04-23 12:15:08,514 | INFO | POST /auth/login | Status: 200 | User: anonymous | Time: 0.341s
+2026-04-23 12:15:08,515 | INFO | ROLLBACK
+2026-04-23 12:15:08,577 | INFO | OPTIONS /users/me | Status: 200 | User: anonymous | Time: 0.000s
+2026-04-23 12:15:08,631 | INFO | BEGIN (implicit)
+2026-04-23 12:15:08,631 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:08,632 | INFO | [generated in 0.00014s] (2,)
+2026-04-23 12:15:08,638 | INFO | GET /users/me | Status: 200 | User: anonymous | Time: 0.009s
+2026-04-23 12:15:08,638 | INFO | ROLLBACK
+2026-04-23 12:15:08,757 | INFO | BEGIN (implicit)
+2026-04-23 12:15:08,757 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:08,757 | INFO | [cached since 0.126s ago] (2,)
+2026-04-23 12:15:08,759 | INFO | GET /users/me | Status: 200 | User: anonymous | Time: 0.003s
+2026-04-23 12:15:08,760 | INFO | ROLLBACK
+2026-04-23 12:15:08,760 | INFO | OPTIONS /candidates/vacancies | Status: 200 | User: anonymous | Time: 0.000s
+2026-04-23 12:15:08,761 | INFO | OPTIONS /candidates/applications | Status: 200 | User: anonymous | Time: 0.000s
+2026-04-23 12:15:08,765 | INFO | OPTIONS /candidates/vacancies/recommended | Status: 200 | User: anonymous | Time: 0.000s
+2026-04-23 12:15:08,768 | INFO | OPTIONS /candidates/profile | Status: 200 | User: anonymous | Time: 0.000s
+2026-04-23 12:15:08,795 | WARNING | GET /candidates/notifications | Status: 401 | User: anonymous | Time: 0.001s
+2026-04-23 12:15:08,932 | INFO | BEGIN (implicit)
+2026-04-23 12:15:08,933 | INFO | SELECT vacancies.id, vacancies.title, vacancies.description, vacancies.required_skills, vacancies.hr_id, vacancies.created_at, vacancies.updated_at, vacancies.is_active 
+FROM vacancies 
+WHERE vacancies.is_active = true
+2026-04-23 12:15:08,933 | INFO | [generated in 0.00014s] ()
+2026-04-23 12:15:08,978 | INFO | GET /candidates/vacancies | Status: 200 | User: anonymous | Time: 0.047s
+2026-04-23 12:15:08,979 | INFO | ROLLBACK
+2026-04-23 12:15:08,979 | INFO | BEGIN (implicit)
+2026-04-23 12:15:08,979 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:08,980 | INFO | [cached since 0.3482s ago] (2,)
+2026-04-23 12:15:08,981 | INFO | BEGIN (implicit)
+2026-04-23 12:15:08,981 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:08,981 | INFO | [cached since 0.3495s ago] (2,)
+2026-04-23 12:15:09,002 | INFO | BEGIN (implicit)
+2026-04-23 12:15:09,003 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:09,003 | INFO | [cached since 0.3714s ago] (2,)
+2026-04-23 12:15:09,016 | INFO | SELECT applications.id, applications.vacancy_id, applications.candidate_id, applications.status, applications.match_score, applications.created_at, applications.updated_at, applications.rating, applications.pipeline_stage, applications.match_summary 
+FROM applications 
+WHERE applications.candidate_id = $1::INTEGER
+2026-04-23 12:15:09,016 | INFO | [generated in 0.00015s] (2,)
+2026-04-23 12:15:09,016 | INFO | SELECT vacancies.id, vacancies.title, vacancies.description, vacancies.required_skills, vacancies.hr_id, vacancies.created_at, vacancies.updated_at, vacancies.is_active 
+FROM vacancies 
+WHERE vacancies.is_active = true
+2026-04-23 12:15:09,017 | INFO | [cached since 0.08362s ago] ()
+2026-04-23 12:15:09,023 | INFO | SELECT candidate_profiles.id, candidate_profiles.user_id, candidate_profiles.about_me, candidate_profiles.desired_position, candidate_profiles.desired_salary, candidate_profiles.city, candidate_profiles.phone, candidate_profiles.telegram, candidate_profiles.birth_date, candidate_profiles.resume_file_path, candidate_profiles.created_at, candidate_profiles.updated_at 
+FROM candidate_profiles 
+WHERE candidate_profiles.user_id = $1::INTEGER
+2026-04-23 12:15:09,023 | INFO | [generated in 0.00016s] (2,)
+2026-04-23 12:15:09,024 | INFO | GET /candidates/vacancies/recommended | Status: 200 | User: anonymous | Time: 0.090s
+2026-04-23 12:15:09,025 | INFO | GET /candidates/applications | Status: 200 | User: anonymous | Time: 0.091s
+2026-04-23 12:15:09,026 | INFO | ROLLBACK
+2026-04-23 12:15:09,026 | INFO | ROLLBACK
+2026-04-23 12:15:09,029 | INFO | SELECT portfolio_items.profile_id AS portfolio_items_profile_id, portfolio_items.id AS portfolio_items_id, portfolio_items.title AS portfolio_items_title, portfolio_items.description AS portfolio_items_description, portfolio_items.url AS portfolio_items_url, portfolio_items.file_path AS portfolio_items_file_path, portfolio_items.preview_path AS portfolio_items_preview_path 
+FROM portfolio_items 
+WHERE portfolio_items.profile_id IN ($1::INTEGER)
+2026-04-23 12:15:09,029 | INFO | [generated in 0.00018s] (1,)
+2026-04-23 12:15:09,032 | INFO | SELECT candidate_skills.profile_id AS candidate_skills_profile_id, candidate_skills.id AS candidate_skills_id, candidate_skills.name AS candidate_skills_name, candidate_skills.level AS candidate_skills_level 
+FROM candidate_skills 
+WHERE candidate_skills.profile_id IN ($1::INTEGER)
+2026-04-23 12:15:09,032 | INFO | [generated in 0.00017s] (1,)
+2026-04-23 12:15:09,035 | INFO | SELECT work_experiences.profile_id AS work_experiences_profile_id, work_experiences.id AS work_experiences_id, work_experiences.company AS work_experiences_company, work_experiences.position AS work_experiences_position, work_experiences.description AS work_experiences_description, work_experiences.start_date AS work_experiences_start_date, work_experiences.end_date AS work_experiences_end_date, work_experiences.is_current AS work_experiences_is_current 
+FROM work_experiences 
+WHERE work_experiences.profile_id IN ($1::INTEGER)
+2026-04-23 12:15:09,035 | INFO | [generated in 0.00015s] (1,)
+2026-04-23 12:15:09,038 | INFO | SELECT certificates.profile_id AS certificates_profile_id, certificates.id AS certificates_id, certificates.title AS certificates_title, certificates.issuer AS certificates_issuer, certificates.issue_date AS certificates_issue_date, certificates.file_path AS certificates_file_path, certificates.preview_path AS certificates_preview_path 
+FROM certificates 
+WHERE certificates.profile_id IN ($1::INTEGER)
+2026-04-23 12:15:09,038 | INFO | [generated in 0.00015s] (1,)
+2026-04-23 12:15:09,041 | INFO | SELECT educations.profile_id AS educations_profile_id, educations.id AS educations_id, educations.institution AS educations_institution, educations.degree AS educations_degree, educations.field_of_study AS educations_field_of_study, educations.start_year AS educations_start_year, educations.end_year AS educations_end_year 
+FROM educations 
+WHERE educations.profile_id IN ($1::INTEGER)
+2026-04-23 12:15:09,041 | INFO | [generated in 0.00025s] (1,)
+2026-04-23 12:15:09,045 | INFO | GET /candidates/profile | Status: 200 | User: anonymous | Time: 0.069s
+2026-04-23 12:15:09,046 | INFO | ROLLBACK
+2026-04-23 12:15:09,133 | INFO | OPTIONS /candidates/profile/resume/status | Status: 200 | User: anonymous | Time: 0.000s
+2026-04-23 12:15:09,134 | INFO | OPTIONS /candidates/resume/recommendations | Status: 200 | User: anonymous | Time: 0.001s
+2026-04-23 12:15:09,135 | INFO | OPTIONS /candidates/profile/experiences | Status: 200 | User: anonymous | Time: 0.000s
+2026-04-23 12:15:09,136 | INFO | OPTIONS /candidates/profile/educations | Status: 200 | User: anonymous | Time: 0.000s
+2026-04-23 12:15:09,140 | INFO | OPTIONS /candidates/profile/portfolio | Status: 200 | User: anonymous | Time: 0.000s
+2026-04-23 12:15:09,147 | INFO | OPTIONS /candidates/profile/certificates | Status: 200 | User: anonymous | Time: 0.000s
+2026-04-23 12:15:09,201 | INFO | OPTIONS /candidates/profile/skills | Status: 200 | User: anonymous | Time: 0.000s
+2026-04-23 12:15:09,249 | INFO | BEGIN (implicit)
+2026-04-23 12:15:09,249 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:09,249 | INFO | [cached since 0.6179s ago] (2,)
+2026-04-23 12:15:09,250 | INFO | BEGIN (implicit)
+2026-04-23 12:15:09,250 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:09,250 | INFO | [cached since 0.6185s ago] (2,)
+2026-04-23 12:15:09,251 | INFO | BEGIN (implicit)
+2026-04-23 12:15:09,251 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:09,251 | INFO | [cached since 0.6196s ago] (2,)
+2026-04-23 12:15:09,252 | INFO | SELECT candidate_profiles.id, candidate_profiles.user_id, candidate_profiles.about_me, candidate_profiles.desired_position, candidate_profiles.desired_salary, candidate_profiles.city, candidate_profiles.phone, candidate_profiles.telegram, candidate_profiles.birth_date, candidate_profiles.resume_file_path, candidate_profiles.created_at, candidate_profiles.updated_at 
+FROM candidate_profiles 
+WHERE candidate_profiles.user_id = $1::INTEGER
+2026-04-23 12:15:09,252 | INFO | [generated in 0.00012s] (2,)
+2026-04-23 12:15:09,253 | INFO | SELECT candidate_profiles.id, candidate_profiles.user_id, candidate_profiles.about_me, candidate_profiles.desired_position, candidate_profiles.desired_salary, candidate_profiles.city, candidate_profiles.phone, candidate_profiles.telegram, candidate_profiles.birth_date, candidate_profiles.resume_file_path, candidate_profiles.created_at, candidate_profiles.updated_at 
+FROM candidate_profiles 
+WHERE candidate_profiles.user_id = $1::INTEGER
+2026-04-23 12:15:09,253 | INFO | [cached since 0.0006875s ago] (2,)
+2026-04-23 12:15:09,254 | INFO | SELECT work_experiences.id, work_experiences.profile_id, work_experiences.company, work_experiences.position, work_experiences.description, work_experiences.start_date, work_experiences.end_date, work_experiences.is_current 
+FROM work_experiences JOIN candidate_profiles ON work_experiences.profile_id = candidate_profiles.id 
+WHERE candidate_profiles.user_id = $1::INTEGER ORDER BY work_experiences.start_date DESC
+2026-04-23 12:15:09,254 | INFO | [generated in 0.00011s] (2,)
+2026-04-23 12:15:09,256 | INFO | SELECT count(work_experiences.id) AS count_1 
+FROM work_experiences 
+WHERE work_experiences.profile_id = $1::INTEGER
+2026-04-23 12:15:09,256 | INFO | [generated in 0.00011s] (1,)
+2026-04-23 12:15:09,257 | INFO | GET /candidates/profile/resume/status | Status: 200 | User: anonymous | Time: 0.010s
+2026-04-23 12:15:09,257 | INFO | ROLLBACK
+2026-04-23 12:15:09,258 | INFO | GET /candidates/profile/experiences | Status: 200 | User: anonymous | Time: 0.008s
+2026-04-23 12:15:09,258 | INFO | ROLLBACK
+2026-04-23 12:15:09,259 | INFO | SELECT count(educations.id) AS count_1 
+FROM educations 
+WHERE educations.profile_id = $1::INTEGER
+2026-04-23 12:15:09,259 | INFO | [generated in 0.00011s] (1,)
+2026-04-23 12:15:09,261 | INFO | SELECT count(candidate_skills.id) AS count_1 
+FROM candidate_skills 
+WHERE candidate_skills.profile_id = $1::INTEGER
+2026-04-23 12:15:09,261 | INFO | [generated in 0.00011s] (1,)
+2026-04-23 12:15:09,262 | INFO | GET /candidates/resume/recommendations | Status: 200 | User: anonymous | Time: 0.014s
+2026-04-23 12:15:09,262 | INFO | ROLLBACK
+2026-04-23 12:15:09,265 | INFO | BEGIN (implicit)
+2026-04-23 12:15:09,265 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:09,266 | INFO | [cached since 0.6344s ago] (2,)
+2026-04-23 12:15:09,267 | INFO | SELECT educations.id, educations.profile_id, educations.institution, educations.degree, educations.field_of_study, educations.start_year, educations.end_year 
+FROM educations JOIN candidate_profiles ON educations.profile_id = candidate_profiles.id 
+WHERE candidate_profiles.user_id = $1::INTEGER ORDER BY educations.start_year DESC NULLS LAST
+2026-04-23 12:15:09,267 | INFO | [generated in 0.00011s] (2,)
+2026-04-23 12:15:09,269 | INFO | GET /candidates/profile/educations | Status: 200 | User: anonymous | Time: 0.004s
+2026-04-23 12:15:09,269 | INFO | ROLLBACK
+2026-04-23 12:15:09,287 | INFO | BEGIN (implicit)
+2026-04-23 12:15:09,288 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:09,288 | INFO | [cached since 0.6563s ago] (2,)
+2026-04-23 12:15:09,289 | INFO | SELECT portfolio_items.id, portfolio_items.profile_id, portfolio_items.title, portfolio_items.description, portfolio_items.url, portfolio_items.file_path, portfolio_items.preview_path 
+FROM portfolio_items JOIN candidate_profiles ON portfolio_items.profile_id = candidate_profiles.id 
+WHERE candidate_profiles.user_id = $1::INTEGER ORDER BY portfolio_items.id DESC
+2026-04-23 12:15:09,289 | INFO | [generated in 0.00013s] (2,)
+2026-04-23 12:15:09,291 | INFO | GET /candidates/profile/portfolio | Status: 200 | User: anonymous | Time: 0.004s
+2026-04-23 12:15:09,291 | INFO | ROLLBACK
+2026-04-23 12:15:09,344 | INFO | BEGIN (implicit)
+2026-04-23 12:15:09,344 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:09,345 | INFO | [cached since 0.7132s ago] (2,)
+2026-04-23 12:15:09,345 | INFO | BEGIN (implicit)
+2026-04-23 12:15:09,345 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:09,345 | INFO | [cached since 0.7138s ago] (2,)
+2026-04-23 12:15:09,347 | INFO | SELECT certificates.id, certificates.profile_id, certificates.title, certificates.issuer, certificates.issue_date, certificates.file_path, certificates.preview_path 
+FROM certificates JOIN candidate_profiles ON certificates.profile_id = candidate_profiles.id 
+WHERE candidate_profiles.user_id = $1::INTEGER ORDER BY certificates.issue_date DESC NULLS LAST
+2026-04-23 12:15:09,347 | INFO | [generated in 0.00015s] (2,)
+2026-04-23 12:15:09,348 | INFO | SELECT candidate_skills.id, candidate_skills.profile_id, candidate_skills.name, candidate_skills.level 
+FROM candidate_skills JOIN candidate_profiles ON candidate_skills.profile_id = candidate_profiles.id 
+WHERE candidate_profiles.user_id = $1::INTEGER ORDER BY candidate_skills.name ASC
+2026-04-23 12:15:09,348 | INFO | [generated in 0.00013s] (2,)
+2026-04-23 12:15:09,349 | INFO | GET /candidates/profile/certificates | Status: 200 | User: anonymous | Time: 0.006s
+2026-04-23 12:15:09,349 | INFO | ROLLBACK
+2026-04-23 12:15:09,350 | INFO | GET /candidates/profile/skills | Status: 200 | User: anonymous | Time: 0.007s
+2026-04-23 12:15:09,350 | INFO | ROLLBACK
+2026-04-23 12:15:11,992 | INFO | OPTIONS /auth/logout | Status: 200 | User: anonymous | Time: 0.000s
+2026-04-23 12:15:12,054 | INFO | BEGIN (implicit)
+2026-04-23 12:15:12,055 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:12,055 | INFO | [cached since 3.423s ago] (2,)
+2026-04-23 12:15:12,056 | INFO | POST /auth/logout | Status: 200 | User: anonymous | Time: 0.003s
+2026-04-23 12:15:12,057 | INFO | ROLLBACK
+2026-04-23 12:15:12,204 | INFO | BEGIN (implicit)
+2026-04-23 12:15:12,204 | INFO | SELECT vacancies.id, vacancies.title, vacancies.description, vacancies.required_skills, vacancies.hr_id, vacancies.created_at, vacancies.updated_at, vacancies.is_active 
+FROM vacancies 
+WHERE vacancies.is_active = true
+2026-04-23 12:15:12,204 | INFO | [cached since 3.271s ago] ()
+2026-04-23 12:15:12,206 | INFO | GET /candidates/vacancies | Status: 200 | User: anonymous | Time: 0.003s
+2026-04-23 12:15:12,209 | INFO | ROLLBACK
+2026-04-23 12:15:12,209 | WARNING | GET /candidates/vacancies/recommended | Status: 401 | User: anonymous | Time: 0.004s
+2026-04-23 12:15:12,209 | WARNING | GET /candidates/applications | Status: 401 | User: anonymous | Time: 0.005s
+2026-04-23 12:15:12,210 | WARNING | GET /candidates/profile/resume/status | Status: 401 | User: anonymous | Time: 0.005s
+2026-04-23 12:15:12,210 | WARNING | GET /candidates/resume/recommendations | Status: 401 | User: anonymous | Time: 0.004s
+2026-04-23 12:15:12,211 | WARNING | GET /candidates/profile/experiences | Status: 401 | User: anonymous | Time: 0.003s
+2026-04-23 12:15:12,306 | WARNING | GET /candidates/notifications | Status: 401 | User: anonymous | Time: 0.001s
+2026-04-23 12:15:12,334 | WARNING | GET /candidates/profile/educations | Status: 401 | User: anonymous | Time: 0.003s
+2026-04-23 12:15:12,335 | WARNING | GET /candidates/profile/portfolio | Status: 401 | User: anonymous | Time: 0.003s
+2026-04-23 12:15:12,335 | WARNING | GET /candidates/profile/skills | Status: 401 | User: anonymous | Time: 0.002s
+2026-04-23 12:15:12,335 | WARNING | GET /candidates/profile/certificates | Status: 401 | User: anonymous | Time: 0.002s
+2026-04-23 12:15:12,365 | WARNING | GET /candidates/profile | Status: 401 | User: anonymous | Time: 0.001s
+2026-04-23 12:15:30,338 | INFO | OPTIONS /auth/register | Status: 200 | User: anonymous | Time: 0.000s
+2026-04-23 12:15:30,443 | INFO | BEGIN (implicit)
+2026-04-23 12:15:30,444 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE lower(users.email) = lower($1::VARCHAR)
+2026-04-23 12:15:30,444 | INFO | [generated in 0.00013s] ('ieremin755@yandex.ru',)
+2026-04-23 12:15:30,674 | INFO | INSERT INTO users (email, hashed_password, is_active, is_superuser, is_verified, role, is_blocked, created_at, resume_path, resume_text, full_name) VALUES ($1::VARCHAR, $2::VARCHAR, $3::BOOLEAN, $4::BOOLEAN, $5::BOOLEAN, $6::userrole, $7::BOOLEAN, $8::TIMESTAMP WITH TIME ZONE, $9::VARCHAR, $10::VARCHAR, $11::VARCHAR) RETURNING users.id
+2026-04-23 12:15:30,674 | INFO | [generated in 0.00029s] ('ieremin755@yandex.ru', '$2b$12$IjmxoEMrf7ybH2fSF1XCEewAum8RIhhDuw6lztpjmU0Mn6Zg30RMi', True, False, False, 'CANDIDATE', False, datetime.datetime(2026, 4, 23, 12, 15, 30, 674313, tzinfo=datetime.timezone.utc), None, None, 'Еремин Иван Владимирови')
+2026-04-23 12:15:30,677 | INFO | COMMIT
+2026-04-23 12:15:30,678 | INFO | BEGIN (implicit)
+2026-04-23 12:15:30,679 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:30,679 | INFO | [generated in 0.00012s] (4,)
+2026-04-23 12:15:30,680 | INFO | POST /auth/register | Status: 201 | User: anonymous | Time: 0.239s
+2026-04-23 12:15:30,680 | INFO | ROLLBACK
+2026-04-23 12:15:30,788 | INFO | BEGIN (implicit)
+2026-04-23 12:15:30,788 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.email = $1::VARCHAR
+2026-04-23 12:15:30,788 | INFO | [cached since 22.55s ago] ('ieremin755@yandex.ru',)
+2026-04-23 12:15:31,014 | INFO | POST /auth/login | Status: 200 | User: anonymous | Time: 0.228s
+2026-04-23 12:15:31,014 | INFO | ROLLBACK
+2026-04-23 12:15:31,156 | INFO | BEGIN (implicit)
+2026-04-23 12:15:31,157 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:31,157 | INFO | [cached since 22.53s ago] (4,)
+2026-04-23 12:15:31,158 | INFO | GET /users/me | Status: 200 | User: anonymous | Time: 0.003s
+2026-04-23 12:15:31,158 | INFO | ROLLBACK
+2026-04-23 12:15:31,241 | INFO | BEGIN (implicit)
+2026-04-23 12:15:31,241 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:31,242 | INFO | [cached since 22.61s ago] (4,)
+2026-04-23 12:15:31,243 | INFO | GET /users/me | Status: 200 | User: anonymous | Time: 0.002s
+2026-04-23 12:15:31,243 | INFO | ROLLBACK
+2026-04-23 12:15:31,245 | INFO | BEGIN (implicit)
+2026-04-23 12:15:31,245 | INFO | SELECT vacancies.id, vacancies.title, vacancies.description, vacancies.required_skills, vacancies.hr_id, vacancies.created_at, vacancies.updated_at, vacancies.is_active 
+FROM vacancies 
+WHERE vacancies.is_active = true
+2026-04-23 12:15:31,245 | INFO | [cached since 22.31s ago] ()
+2026-04-23 12:15:31,246 | INFO | GET /candidates/vacancies | Status: 200 | User: anonymous | Time: 0.001s
+2026-04-23 12:15:31,247 | INFO | ROLLBACK
+2026-04-23 12:15:31,249 | INFO | BEGIN (implicit)
+2026-04-23 12:15:31,250 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:31,250 | INFO | [cached since 22.62s ago] (4,)
+2026-04-23 12:15:31,250 | INFO | BEGIN (implicit)
+2026-04-23 12:15:31,250 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:31,250 | INFO | [cached since 22.62s ago] (4,)
+2026-04-23 12:15:31,251 | INFO | SELECT applications.id, applications.vacancy_id, applications.candidate_id, applications.status, applications.match_score, applications.created_at, applications.updated_at, applications.rating, applications.pipeline_stage, applications.match_summary 
+FROM applications 
+WHERE applications.candidate_id = $1::INTEGER
+2026-04-23 12:15:31,251 | INFO | [cached since 22.24s ago] (4,)
+2026-04-23 12:15:31,252 | INFO | BEGIN (implicit)
+2026-04-23 12:15:31,252 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:31,252 | INFO | [cached since 22.62s ago] (4,)
+2026-04-23 12:15:31,253 | INFO | ROLLBACK
+2026-04-23 12:15:31,253 | INFO | SELECT candidate_profiles.id, candidate_profiles.user_id, candidate_profiles.about_me, candidate_profiles.desired_position, candidate_profiles.desired_salary, candidate_profiles.city, candidate_profiles.phone, candidate_profiles.telegram, candidate_profiles.birth_date, candidate_profiles.resume_file_path, candidate_profiles.created_at, candidate_profiles.updated_at 
+FROM candidate_profiles 
+WHERE candidate_profiles.user_id = $1::INTEGER
+2026-04-23 12:15:31,253 | INFO | [cached since 22.23s ago] (4,)
+2026-04-23 12:15:31,254 | WARNING | GET /candidates/vacancies/recommended | Status: 400 | User: anonymous | Time: 0.005s
+2026-04-23 12:15:31,255 | INFO | INSERT INTO candidate_profiles (user_id, about_me, desired_position, desired_salary, city, phone, telegram, birth_date, resume_file_path, created_at, updated_at) VALUES ($1::INTEGER, $2::VARCHAR, $3::VARCHAR, $4::INTEGER, $5::VARCHAR, $6::VARCHAR, $7::VARCHAR, $8::DATE, $9::VARCHAR, $10::TIMESTAMP WITH TIME ZONE, $11::TIMESTAMP WITH TIME ZONE) RETURNING candidate_profiles.id
+2026-04-23 12:15:31,255 | INFO | [generated in 0.00017s] (4, None, None, None, None, None, None, None, None, datetime.datetime(2026, 4, 23, 12, 15, 31, 255672, tzinfo=datetime.timezone.utc), datetime.datetime(2026, 4, 23, 12, 15, 31, 255674, tzinfo=datetime.timezone.utc))
+2026-04-23 12:15:31,257 | INFO | COMMIT
+2026-04-23 12:15:31,258 | INFO | BEGIN (implicit)
+2026-04-23 12:15:31,259 | INFO | SELECT candidate_profiles.id, candidate_profiles.user_id, candidate_profiles.about_me, candidate_profiles.desired_position, candidate_profiles.desired_salary, candidate_profiles.city, candidate_profiles.phone, candidate_profiles.telegram, candidate_profiles.birth_date, candidate_profiles.resume_file_path, candidate_profiles.created_at, candidate_profiles.updated_at 
+FROM candidate_profiles 
+WHERE candidate_profiles.id = $1::INTEGER
+2026-04-23 12:15:31,259 | INFO | [generated in 0.00011s] (3,)
+2026-04-23 12:15:31,259 | INFO | GET /candidates/applications | Status: 200 | User: anonymous | Time: 0.011s
+2026-04-23 12:15:31,260 | INFO | ROLLBACK
+2026-04-23 12:15:31,260 | INFO | SELECT candidate_profiles.id, candidate_profiles.user_id, candidate_profiles.about_me, candidate_profiles.desired_position, candidate_profiles.desired_salary, candidate_profiles.city, candidate_profiles.phone, candidate_profiles.telegram, candidate_profiles.birth_date, candidate_profiles.resume_file_path, candidate_profiles.created_at, candidate_profiles.updated_at 
+FROM candidate_profiles 
+WHERE candidate_profiles.user_id = $1::INTEGER
+2026-04-23 12:15:31,260 | INFO | [cached since 22.24s ago] (4,)
+2026-04-23 12:15:31,261 | INFO | SELECT portfolio_items.profile_id AS portfolio_items_profile_id, portfolio_items.id AS portfolio_items_id, portfolio_items.title AS portfolio_items_title, portfolio_items.description AS portfolio_items_description, portfolio_items.url AS portfolio_items_url, portfolio_items.file_path AS portfolio_items_file_path, portfolio_items.preview_path AS portfolio_items_preview_path 
+FROM portfolio_items 
+WHERE portfolio_items.profile_id IN ($1::INTEGER)
+2026-04-23 12:15:31,261 | INFO | [cached since 22.23s ago] (3,)
+2026-04-23 12:15:31,262 | INFO | SELECT candidate_skills.profile_id AS candidate_skills_profile_id, candidate_skills.id AS candidate_skills_id, candidate_skills.name AS candidate_skills_name, candidate_skills.level AS candidate_skills_level 
+FROM candidate_skills 
+WHERE candidate_skills.profile_id IN ($1::INTEGER)
+2026-04-23 12:15:31,263 | INFO | [cached since 22.23s ago] (3,)
+2026-04-23 12:15:31,263 | INFO | SELECT work_experiences.profile_id AS work_experiences_profile_id, work_experiences.id AS work_experiences_id, work_experiences.company AS work_experiences_company, work_experiences.position AS work_experiences_position, work_experiences.description AS work_experiences_description, work_experiences.start_date AS work_experiences_start_date, work_experiences.end_date AS work_experiences_end_date, work_experiences.is_current AS work_experiences_is_current 
+FROM work_experiences 
+WHERE work_experiences.profile_id IN ($1::INTEGER)
+2026-04-23 12:15:31,263 | INFO | [cached since 22.23s ago] (3,)
+2026-04-23 12:15:31,264 | INFO | SELECT certificates.profile_id AS certificates_profile_id, certificates.id AS certificates_id, certificates.title AS certificates_title, certificates.issuer AS certificates_issuer, certificates.issue_date AS certificates_issue_date, certificates.file_path AS certificates_file_path, certificates.preview_path AS certificates_preview_path 
+FROM certificates 
+WHERE certificates.profile_id IN ($1::INTEGER)
+2026-04-23 12:15:31,264 | INFO | [cached since 22.23s ago] (3,)
+2026-04-23 12:15:31,266 | INFO | SELECT educations.profile_id AS educations_profile_id, educations.id AS educations_id, educations.institution AS educations_institution, educations.degree AS educations_degree, educations.field_of_study AS educations_field_of_study, educations.start_year AS educations_start_year, educations.end_year AS educations_end_year 
+FROM educations 
+WHERE educations.profile_id IN ($1::INTEGER)
+2026-04-23 12:15:31,266 | INFO | [cached since 22.22s ago] (3,)
+2026-04-23 12:15:31,266 | INFO | GET /candidates/profile | Status: 200 | User: anonymous | Time: 0.016s
+2026-04-23 12:15:31,267 | INFO | ROLLBACK
+2026-04-23 12:15:31,386 | WARNING | GET /candidates/notifications | Status: 401 | User: anonymous | Time: 0.001s
+2026-04-23 12:15:31,503 | INFO | BEGIN (implicit)
+2026-04-23 12:15:31,504 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:31,504 | INFO | [cached since 22.87s ago] (4,)
+2026-04-23 12:15:31,504 | INFO | BEGIN (implicit)
+2026-04-23 12:15:31,504 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:31,504 | INFO | [cached since 22.87s ago] (4,)
+2026-04-23 12:15:31,506 | INFO | SELECT candidate_profiles.id, candidate_profiles.user_id, candidate_profiles.about_me, candidate_profiles.desired_position, candidate_profiles.desired_salary, candidate_profiles.city, candidate_profiles.phone, candidate_profiles.telegram, candidate_profiles.birth_date, candidate_profiles.resume_file_path, candidate_profiles.created_at, candidate_profiles.updated_at 
+FROM candidate_profiles 
+WHERE candidate_profiles.user_id = $1::INTEGER
+2026-04-23 12:15:31,506 | INFO | [cached since 22.25s ago] (4,)
+2026-04-23 12:15:31,506 | INFO | BEGIN (implicit)
+2026-04-23 12:15:31,506 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:31,506 | INFO | [cached since 22.87s ago] (4,)
+2026-04-23 12:15:31,507 | INFO | SELECT candidate_profiles.id, candidate_profiles.user_id, candidate_profiles.about_me, candidate_profiles.desired_position, candidate_profiles.desired_salary, candidate_profiles.city, candidate_profiles.phone, candidate_profiles.telegram, candidate_profiles.birth_date, candidate_profiles.resume_file_path, candidate_profiles.created_at, candidate_profiles.updated_at 
+FROM candidate_profiles 
+WHERE candidate_profiles.user_id = $1::INTEGER
+2026-04-23 12:15:31,507 | INFO | [cached since 22.25s ago] (4,)
+2026-04-23 12:15:31,507 | INFO | SELECT count(work_experiences.id) AS count_1 
+FROM work_experiences 
+WHERE work_experiences.profile_id = $1::INTEGER
+2026-04-23 12:15:31,508 | INFO | [cached since 22.25s ago] (3,)
+2026-04-23 12:15:31,509 | INFO | GET /candidates/profile/resume/status | Status: 200 | User: anonymous | Time: 0.007s
+2026-04-23 12:15:31,510 | INFO | SELECT work_experiences.id, work_experiences.profile_id, work_experiences.company, work_experiences.position, work_experiences.description, work_experiences.start_date, work_experiences.end_date, work_experiences.is_current 
+FROM work_experiences JOIN candidate_profiles ON work_experiences.profile_id = candidate_profiles.id 
+WHERE candidate_profiles.user_id = $1::INTEGER ORDER BY work_experiences.start_date DESC
+2026-04-23 12:15:31,510 | INFO | [cached since 22.26s ago] (4,)
+2026-04-23 12:15:31,510 | INFO | BEGIN (implicit)
+2026-04-23 12:15:31,510 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:31,510 | INFO | [cached since 22.88s ago] (4,)
+2026-04-23 12:15:31,511 | INFO | SELECT count(educations.id) AS count_1 
+FROM educations 
+WHERE educations.profile_id = $1::INTEGER
+2026-04-23 12:15:31,511 | INFO | [cached since 22.25s ago] (3,)
+2026-04-23 12:15:31,513 | INFO | SELECT portfolio_items.id, portfolio_items.profile_id, portfolio_items.title, portfolio_items.description, portfolio_items.url, portfolio_items.file_path, portfolio_items.preview_path 
+FROM portfolio_items JOIN candidate_profiles ON portfolio_items.profile_id = candidate_profiles.id 
+WHERE candidate_profiles.user_id = $1::INTEGER ORDER BY portfolio_items.id DESC
+2026-04-23 12:15:31,513 | INFO | [cached since 22.22s ago] (4,)
+2026-04-23 12:15:31,514 | INFO | ROLLBACK
+2026-04-23 12:15:31,514 | INFO | SELECT count(candidate_skills.id) AS count_1 
+FROM candidate_skills 
+WHERE candidate_skills.profile_id = $1::INTEGER
+2026-04-23 12:15:31,514 | INFO | [cached since 22.25s ago] (3,)
+2026-04-23 12:15:31,514 | INFO | GET /candidates/profile/experiences | Status: 200 | User: anonymous | Time: 0.010s
+2026-04-23 12:15:31,517 | INFO | ROLLBACK
+2026-04-23 12:15:31,517 | INFO | GET /candidates/profile/portfolio | Status: 200 | User: anonymous | Time: 0.010s
+2026-04-23 12:15:31,517 | INFO | GET /candidates/resume/recommendations | Status: 200 | User: anonymous | Time: 0.016s
+2026-04-23 12:15:31,536 | INFO | ROLLBACK
+2026-04-23 12:15:31,537 | INFO | ROLLBACK
+2026-04-23 12:15:31,557 | INFO | BEGIN (implicit)
+2026-04-23 12:15:31,557 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:31,557 | INFO | [cached since 22.93s ago] (4,)
+2026-04-23 12:15:31,558 | INFO | BEGIN (implicit)
+2026-04-23 12:15:31,558 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:31,558 | INFO | [cached since 22.93s ago] (4,)
+2026-04-23 12:15:31,574 | INFO | SELECT educations.id, educations.profile_id, educations.institution, educations.degree, educations.field_of_study, educations.start_year, educations.end_year 
+FROM educations JOIN candidate_profiles ON educations.profile_id = candidate_profiles.id 
+WHERE candidate_profiles.user_id = $1::INTEGER ORDER BY educations.start_year DESC NULLS LAST
+2026-04-23 12:15:31,574 | INFO | [cached since 22.31s ago] (4,)
+2026-04-23 12:15:31,575 | INFO | SELECT certificates.id, certificates.profile_id, certificates.title, certificates.issuer, certificates.issue_date, certificates.file_path, certificates.preview_path 
+FROM certificates JOIN candidate_profiles ON certificates.profile_id = candidate_profiles.id 
+WHERE candidate_profiles.user_id = $1::INTEGER ORDER BY certificates.issue_date DESC NULLS LAST
+2026-04-23 12:15:31,575 | INFO | [cached since 22.23s ago] (4,)
+2026-04-23 12:15:31,577 | INFO | GET /candidates/profile/educations | Status: 200 | User: anonymous | Time: 0.070s
+2026-04-23 12:15:31,577 | INFO | ROLLBACK
+2026-04-23 12:15:31,578 | INFO | GET /candidates/profile/certificates | Status: 200 | User: anonymous | Time: 0.066s
+2026-04-23 12:15:31,578 | INFO | ROLLBACK
+2026-04-23 12:15:31,668 | INFO | BEGIN (implicit)
+2026-04-23 12:15:31,669 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:31,669 | INFO | [cached since 23.04s ago] (4,)
+2026-04-23 12:15:31,670 | INFO | SELECT candidate_skills.id, candidate_skills.profile_id, candidate_skills.name, candidate_skills.level 
+FROM candidate_skills JOIN candidate_profiles ON candidate_skills.profile_id = candidate_profiles.id 
+WHERE candidate_profiles.user_id = $1::INTEGER ORDER BY candidate_skills.name ASC
+2026-04-23 12:15:31,670 | INFO | [cached since 22.32s ago] (4,)
+2026-04-23 12:15:31,672 | INFO | GET /candidates/profile/skills | Status: 200 | User: anonymous | Time: 0.004s
+2026-04-23 12:15:31,672 | INFO | ROLLBACK
+2026-04-23 12:15:38,907 | INFO | OPTIONS /candidates/resume | Status: 200 | User: anonymous | Time: 0.000s
+2026-04-23 12:15:39,027 | INFO | BEGIN (implicit)
+2026-04-23 12:15:39,027 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:39,027 | INFO | [cached since 30.4s ago] (4,)
+2026-04-23 12:15:39,059 | INFO | UPDATE users SET resume_path=$1::VARCHAR, resume_text=$2::VARCHAR WHERE users.id = $3::INTEGER
+2026-04-23 12:15:39,059 | INFO | [generated in 0.00016s] ('uploads/resumes/user_4_Резюме_ML_инженер_Иван_Еремин_от_11_03_2026_12_05.pdf', "Еремин Иван\nМужчина, 23\xa0года, родился 7 июля 2002\n+7\xa0(906)\xa01542277 \xa0—\xa0предпочитаемый способ связи\nieremin755@gmail.com\ntelegram: @ ... (5345 characters truncated) ... gram-канал о применении нейросетей и новейших открытиях в области\nискусственного интеллекта.\nЕремин Иван  •  Резюме обновлено 11 марта 2026 в 10:44", 4)
+2026-04-23 12:15:39,062 | INFO | SELECT candidate_profiles.id, candidate_profiles.user_id, candidate_profiles.about_me, candidate_profiles.desired_position, candidate_profiles.desired_salary, candidate_profiles.city, candidate_profiles.phone, candidate_profiles.telegram, candidate_profiles.birth_date, candidate_profiles.resume_file_path, candidate_profiles.created_at, candidate_profiles.updated_at 
+FROM candidate_profiles 
+WHERE candidate_profiles.user_id = $1::INTEGER
+2026-04-23 12:15:39,062 | INFO | [cached since 29.81s ago] (4,)
+2026-04-23 12:15:39,063 | INFO | UPDATE candidate_profiles SET about_me=$1::VARCHAR, resume_file_path=$2::VARCHAR, updated_at=$3::TIMESTAMP WITH TIME ZONE WHERE candidate_profiles.id = $4::INTEGER
+2026-04-23 12:15:39,063 | INFO | [generated in 0.00017s] ('Еремин Иван  •  Резюме обновлено 11 марта 2026 в 10:44Обо мне Краткое представление:\n- Профессиональный специалист по созданию и настройке ML-решени ... (1018 characters truncated) ... gram-канал о применении нейросетей и новейших открытиях в области\nискусственного интеллекта.\nЕремин Иван  •  Резюме обновлено 11 марта 2026 в 10:44', 'resumes/user_4_Резюме_ML_инженер_Иван_Еремин_от_11_03_2026_12_05.pdf', datetime.datetime(2026, 4, 23, 12, 15, 39, 63120, tzinfo=datetime.timezone.utc), 3)
+2026-04-23 12:15:39,064 | INFO | DELETE FROM work_experiences WHERE work_experiences.profile_id = $1::INTEGER
+2026-04-23 12:15:39,064 | INFO | [generated in 0.00011s] (3,)
+2026-04-23 12:15:39,065 | INFO | DELETE FROM educations WHERE educations.profile_id = $1::INTEGER
+2026-04-23 12:15:39,065 | INFO | [generated in 0.00010s] (3,)
+2026-04-23 12:15:39,066 | INFO | DELETE FROM candidate_skills WHERE candidate_skills.profile_id = $1::INTEGER
+2026-04-23 12:15:39,066 | INFO | [generated in 0.00011s] (3,)
+2026-04-23 12:15:39,066 | INFO | DELETE FROM certificates WHERE certificates.profile_id = $1::INTEGER
+2026-04-23 12:15:39,066 | INFO | [generated in 0.00010s] (3,)
+2026-04-23 12:15:39,068 | INFO | INSERT INTO candidate_skills (profile_id, name, level) SELECT p0::INTEGER, p1::VARCHAR, p2::VARCHAR FROM (VALUES ($1::INTEGER, $2::VARCHAR, $3::VARCHAR, 0), ($4::INTEGER, $5::VARCHAR, $6::VARCHAR, 1), ($7::INTEGER, $8::VARCHAR, $9::VARCHAR, 2), ($10: ... 1012 characters truncated ... 1, p2, sen_counter) ORDER BY sen_counter RETURNING candidate_skills.id, candidate_skills.id AS id__1
+2026-04-23 12:15:39,068 | INFO | [generated in 0.00007s (insertmanyvalues) 1/1 (ordered)] (3, 'Английский', None, 3, '— B2 — Средне-продвинутый', None, 3, 'Программирование', None, 3, 'Python', None, 3, 'Git', None, 3, 'Docker', None, 3, 'Backend', None, 3, 'GitHub', None, 3, 'FastAPI', None, 3, 'TensorFlow', None, 3, 'Keras', None, 3, 'Ultralytics', None, 3, 'PyTorch', None, 3, 'Computer Vision', None, 3, 'Scikit-learn', None, 3, 'Transformers', None, 3, 'pandas', None, 3, 'Numpy', None, 3, 'Cnn', None, 3, 'Machine Learning', None, 3, 'LLM', None, 3, 'NLP', None, 3, 'YOLO', None, 3, 'Data Science', None)
+2026-04-23 12:15:39,071 | INFO | INSERT INTO educations (profile_id, institution, degree, field_of_study, start_year, end_year) VALUES ($1::INTEGER, $2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::INTEGER, $6::INTEGER) RETURNING educations.id
+2026-04-23 12:15:39,071 | INFO | [generated in 0.00013s] (3, 'МагистрСаратовский государственный технический университет имени Гагарина Ю.А, Саратов Программная инженерия, Разработчик 2024 БакалаврСаратовский государственный технический университет им. Ю.А. Гагарина, Саратов', 'Магистр', 'Программная инженерия, Разработчик', 2026, 2026)
+2026-04-23 12:15:39,073 | INFO | INSERT INTO work_experiences (profile_id, company, position, description, start_date, end_date, is_current) VALUES ($1::INTEGER, $2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::DATE, $6::DATE, $7::BOOLEAN) RETURNING work_experiences.id
+2026-04-23 12:15:39,073 | INFO | [generated in 0.00013s] (3, 'schoolhack.ru', 'Информационные технологии, системная интеграция, интернет', '• Разработка программного обеспечения\nML-разработчик\n- Разработка и совершенствование моделей машинного обучения для широкого круга задач:\nклассиф ... (804 characters truncated) ... решений: систематическое тестирование и\nповторное обучение моделей, работа с большими объемами данных для увеличения скорости\nи точности прогнозов.', datetime.date(2024, 10, 1), None, False)
+2026-04-23 12:15:39,075 | INFO | INSERT INTO parsed_resumes (user_id, source_resume_path, source_resume_text, parse_status, parser_version, normalized_summary, error_message, created_at, updated_at) VALUES ($1::INTEGER, $2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR, $7::VARCHAR, $8::TIMESTAMP WITH TIME ZONE, $9::TIMESTAMP WITH TIME ZONE) RETURNING parsed_resumes.id
+2026-04-23 12:15:39,075 | INFO | [generated in 0.00018s] (4, 'resumes/user_4_Резюме_ML_инженер_Иван_Еремин_от_11_03_2026_12_05.pdf', "Еремин Иван\nМужчина, 23\xa0года, родился 7 июля 2002\n+7\xa0(906)\xa01542277 \xa0—\xa0предпочитаемый способ связи\nieremin755@gmail.com\ntelegram: @ ... (5345 characters truncated) ... gram-канал о применении нейросетей и новейших открытиях в области\nискусственного интеллекта.\nЕремин Иван  •  Резюме обновлено 11 марта 2026 в 10:44", 'pending', 'llm_v1', None, None, datetime.datetime(2026, 4, 23, 12, 15, 39, 74986), datetime.datetime(2026, 4, 23, 12, 15, 39, 74989))
+2026-04-23 12:15:39,075 | INFO | ROLLBACK
+2026-04-23 12:15:54,881 | INFO | BEGIN (implicit)
+2026-04-23 12:15:54,881 | INFO | SELECT vacancies.id, vacancies.title, vacancies.description, vacancies.required_skills, vacancies.hr_id, vacancies.created_at, vacancies.updated_at, vacancies.is_active 
+FROM vacancies 
+WHERE vacancies.is_active = true
+2026-04-23 12:15:54,881 | INFO | [cached since 45.95s ago] ()
+2026-04-23 12:15:54,883 | INFO | GET /candidates/vacancies | Status: 200 | User: anonymous | Time: 0.003s
+2026-04-23 12:15:54,885 | INFO | BEGIN (implicit)
+2026-04-23 12:15:54,885 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:54,885 | INFO | [cached since 46.25s ago] (4,)
+2026-04-23 12:15:54,886 | INFO | BEGIN (implicit)
+2026-04-23 12:15:54,886 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:54,886 | INFO | [cached since 46.25s ago] (4,)
+2026-04-23 12:15:54,887 | INFO | ROLLBACK
+2026-04-23 12:15:54,887 | INFO | BEGIN (implicit)
+2026-04-23 12:15:54,887 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:54,887 | INFO | [cached since 46.26s ago] (4,)
+2026-04-23 12:15:54,888 | INFO | BEGIN (implicit)
+2026-04-23 12:15:54,888 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:54,888 | INFO | [cached since 46.26s ago] (4,)
+2026-04-23 12:15:54,888 | INFO | SELECT applications.id, applications.vacancy_id, applications.candidate_id, applications.status, applications.match_score, applications.created_at, applications.updated_at, applications.rating, applications.pipeline_stage, applications.match_summary 
+FROM applications 
+WHERE applications.candidate_id = $1::INTEGER
+2026-04-23 12:15:54,888 | INFO | [cached since 45.87s ago] (4,)
+2026-04-23 12:15:54,890 | INFO | SELECT candidate_profiles.id, candidate_profiles.user_id, candidate_profiles.about_me, candidate_profiles.desired_position, candidate_profiles.desired_salary, candidate_profiles.city, candidate_profiles.phone, candidate_profiles.telegram, candidate_profiles.birth_date, candidate_profiles.resume_file_path, candidate_profiles.created_at, candidate_profiles.updated_at 
+FROM candidate_profiles 
+WHERE candidate_profiles.user_id = $1::INTEGER
+2026-04-23 12:15:54,890 | INFO | [cached since 45.87s ago] (4,)
+2026-04-23 12:15:54,891 | INFO | ROLLBACK
+2026-04-23 12:15:54,891 | INFO | GET /users/me | Status: 200 | User: anonymous | Time: 0.008s
+2026-04-23 12:15:54,892 | INFO | SELECT portfolio_items.profile_id AS portfolio_items_profile_id, portfolio_items.id AS portfolio_items_id, portfolio_items.title AS portfolio_items_title, portfolio_items.description AS portfolio_items_description, portfolio_items.url AS portfolio_items_url, portfolio_items.file_path AS portfolio_items_file_path, portfolio_items.preview_path AS portfolio_items_preview_path 
+FROM portfolio_items 
+WHERE portfolio_items.profile_id IN ($1::INTEGER)
+2026-04-23 12:15:54,892 | INFO | [cached since 45.86s ago] (3,)
+2026-04-23 12:15:54,892 | INFO | BEGIN (implicit)
+2026-04-23 12:15:54,892 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:54,893 | INFO | [cached since 46.26s ago] (4,)
+2026-04-23 12:15:54,893 | INFO | ROLLBACK
+2026-04-23 12:15:54,893 | WARNING | GET /candidates/vacancies/recommended | Status: 400 | User: anonymous | Time: 0.009s
+2026-04-23 12:15:54,894 | INFO | SELECT candidate_skills.profile_id AS candidate_skills_profile_id, candidate_skills.id AS candidate_skills_id, candidate_skills.name AS candidate_skills_name, candidate_skills.level AS candidate_skills_level 
+FROM candidate_skills 
+WHERE candidate_skills.profile_id IN ($1::INTEGER)
+2026-04-23 12:15:54,894 | INFO | [cached since 45.86s ago] (3,)
+2026-04-23 12:15:54,894 | INFO | SELECT candidate_profiles.id, candidate_profiles.user_id, candidate_profiles.about_me, candidate_profiles.desired_position, candidate_profiles.desired_salary, candidate_profiles.city, candidate_profiles.phone, candidate_profiles.telegram, candidate_profiles.birth_date, candidate_profiles.resume_file_path, candidate_profiles.created_at, candidate_profiles.updated_at 
+FROM candidate_profiles 
+WHERE candidate_profiles.user_id = $1::INTEGER
+2026-04-23 12:15:54,895 | INFO | [cached since 45.64s ago] (4,)
+2026-04-23 12:15:54,896 | INFO | GET /candidates/profile/resume/status | Status: 200 | User: anonymous | Time: 0.005s
+2026-04-23 12:15:54,896 | INFO | SELECT work_experiences.profile_id AS work_experiences_profile_id, work_experiences.id AS work_experiences_id, work_experiences.company AS work_experiences_company, work_experiences.position AS work_experiences_position, work_experiences.description AS work_experiences_description, work_experiences.start_date AS work_experiences_start_date, work_experiences.end_date AS work_experiences_end_date, work_experiences.is_current AS work_experiences_is_current 
+FROM work_experiences 
+WHERE work_experiences.profile_id IN ($1::INTEGER)
+2026-04-23 12:15:54,896 | INFO | [cached since 45.86s ago] (3,)
+2026-04-23 12:15:54,897 | INFO | ROLLBACK
+2026-04-23 12:15:54,898 | INFO | SELECT certificates.profile_id AS certificates_profile_id, certificates.id AS certificates_id, certificates.title AS certificates_title, certificates.issuer AS certificates_issuer, certificates.issue_date AS certificates_issue_date, certificates.file_path AS certificates_file_path, certificates.preview_path AS certificates_preview_path 
+FROM certificates 
+WHERE certificates.profile_id IN ($1::INTEGER)
+2026-04-23 12:15:54,898 | INFO | [cached since 45.86s ago] (3,)
+2026-04-23 12:15:54,898 | INFO | GET /candidates/applications | Status: 200 | User: anonymous | Time: 0.016s
+2026-04-23 12:15:54,899 | INFO | ROLLBACK
+2026-04-23 12:15:54,899 | INFO | SELECT educations.profile_id AS educations_profile_id, educations.id AS educations_id, educations.institution AS educations_institution, educations.degree AS educations_degree, educations.field_of_study AS educations_field_of_study, educations.start_year AS educations_start_year, educations.end_year AS educations_end_year 
+FROM educations 
+WHERE educations.profile_id IN ($1::INTEGER)
+2026-04-23 12:15:54,899 | INFO | [cached since 45.86s ago] (3,)
+2026-04-23 12:15:54,900 | INFO | GET /candidates/profile | Status: 200 | User: anonymous | Time: 0.017s
+2026-04-23 12:15:54,900 | INFO | ROLLBACK
+2026-04-23 12:15:54,956 | INFO | BEGIN (implicit)
+2026-04-23 12:15:54,956 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:54,956 | INFO | [cached since 46.32s ago] (4,)
+2026-04-23 12:15:54,957 | INFO | SELECT candidate_profiles.id, candidate_profiles.user_id, candidate_profiles.about_me, candidate_profiles.desired_position, candidate_profiles.desired_salary, candidate_profiles.city, candidate_profiles.phone, candidate_profiles.telegram, candidate_profiles.birth_date, candidate_profiles.resume_file_path, candidate_profiles.created_at, candidate_profiles.updated_at 
+FROM candidate_profiles 
+WHERE candidate_profiles.user_id = $1::INTEGER
+2026-04-23 12:15:54,957 | INFO | [cached since 45.71s ago] (4,)
+2026-04-23 12:15:54,958 | INFO | SELECT count(work_experiences.id) AS count_1 
+FROM work_experiences 
+WHERE work_experiences.profile_id = $1::INTEGER
+2026-04-23 12:15:54,958 | INFO | [cached since 45.7s ago] (3,)
+2026-04-23 12:15:54,959 | INFO | SELECT count(educations.id) AS count_1 
+FROM educations 
+WHERE educations.profile_id = $1::INTEGER
+2026-04-23 12:15:54,959 | INFO | [cached since 45.7s ago] (3,)
+2026-04-23 12:15:54,959 | INFO | SELECT count(candidate_skills.id) AS count_1 
+FROM candidate_skills 
+WHERE candidate_skills.profile_id = $1::INTEGER
+2026-04-23 12:15:54,959 | INFO | [cached since 45.7s ago] (3,)
+2026-04-23 12:15:54,960 | INFO | GET /candidates/resume/recommendations | Status: 200 | User: anonymous | Time: 0.005s
+2026-04-23 12:15:54,960 | INFO | ROLLBACK
+2026-04-23 12:15:55,008 | INFO | BEGIN (implicit)
+2026-04-23 12:15:55,008 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:55,008 | INFO | [cached since 46.38s ago] (4,)
+2026-04-23 12:15:55,009 | INFO | SELECT work_experiences.id, work_experiences.profile_id, work_experiences.company, work_experiences.position, work_experiences.description, work_experiences.start_date, work_experiences.end_date, work_experiences.is_current 
+FROM work_experiences JOIN candidate_profiles ON work_experiences.profile_id = candidate_profiles.id 
+WHERE candidate_profiles.user_id = $1::INTEGER ORDER BY work_experiences.start_date DESC
+2026-04-23 12:15:55,009 | INFO | [cached since 45.76s ago] (4,)
+2026-04-23 12:15:55,010 | INFO | GET /candidates/profile/experiences | Status: 200 | User: anonymous | Time: 0.003s
+2026-04-23 12:15:55,010 | INFO | ROLLBACK
+2026-04-23 12:15:55,012 | INFO | BEGIN (implicit)
+2026-04-23 12:15:55,012 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:55,012 | INFO | [cached since 46.38s ago] (4,)
+2026-04-23 12:15:55,013 | INFO | SELECT educations.id, educations.profile_id, educations.institution, educations.degree, educations.field_of_study, educations.start_year, educations.end_year 
+FROM educations JOIN candidate_profiles ON educations.profile_id = candidate_profiles.id 
+WHERE candidate_profiles.user_id = $1::INTEGER ORDER BY educations.start_year DESC NULLS LAST
+2026-04-23 12:15:55,013 | INFO | [cached since 45.75s ago] (4,)
+2026-04-23 12:15:55,014 | INFO | GET /candidates/profile/educations | Status: 200 | User: anonymous | Time: 0.003s
+2026-04-23 12:15:55,014 | INFO | ROLLBACK
+2026-04-23 12:15:55,016 | INFO | BEGIN (implicit)
+2026-04-23 12:15:55,016 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:55,016 | INFO | [cached since 46.38s ago] (4,)
+2026-04-23 12:15:55,017 | INFO | SELECT portfolio_items.id, portfolio_items.profile_id, portfolio_items.title, portfolio_items.description, portfolio_items.url, portfolio_items.file_path, portfolio_items.preview_path 
+FROM portfolio_items JOIN candidate_profiles ON portfolio_items.profile_id = candidate_profiles.id 
+WHERE candidate_profiles.user_id = $1::INTEGER ORDER BY portfolio_items.id DESC
+2026-04-23 12:15:55,017 | INFO | [cached since 45.73s ago] (4,)
+2026-04-23 12:15:55,017 | INFO | GET /candidates/profile/portfolio | Status: 200 | User: anonymous | Time: 0.002s
+2026-04-23 12:15:55,018 | INFO | ROLLBACK
+2026-04-23 12:15:55,033 | INFO | BEGIN (implicit)
+2026-04-23 12:15:55,034 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:55,034 | INFO | [cached since 46.4s ago] (4,)
+2026-04-23 12:15:55,035 | INFO | SELECT certificates.id, certificates.profile_id, certificates.title, certificates.issuer, certificates.issue_date, certificates.file_path, certificates.preview_path 
+FROM certificates JOIN candidate_profiles ON certificates.profile_id = candidate_profiles.id 
+WHERE candidate_profiles.user_id = $1::INTEGER ORDER BY certificates.issue_date DESC NULLS LAST
+2026-04-23 12:15:55,035 | INFO | [cached since 45.69s ago] (4,)
+2026-04-23 12:15:55,036 | INFO | GET /candidates/profile/certificates | Status: 200 | User: anonymous | Time: 0.003s
+2026-04-23 12:15:55,036 | INFO | ROLLBACK
+2026-04-23 12:15:55,100 | INFO | BEGIN (implicit)
+2026-04-23 12:15:55,100 | INFO | SELECT users.id, users.email, users.hashed_password, users.is_active, users.is_superuser, users.is_verified, users.role, users.is_blocked, users.created_at, users.resume_path, users.resume_text, users.full_name 
+FROM users 
+WHERE users.id = $1::INTEGER
+2026-04-23 12:15:55,100 | INFO | [cached since 46.47s ago] (4,)
+2026-04-23 12:15:55,101 | INFO | SELECT candidate_skills.id, candidate_skills.profile_id, candidate_skills.name, candidate_skills.level 
+FROM candidate_skills JOIN candidate_profiles ON candidate_skills.profile_id = candidate_profiles.id 
+WHERE candidate_profiles.user_id = $1::INTEGER ORDER BY candidate_skills.name ASC
+2026-04-23 12:15:55,101 | INFO | [cached since 45.75s ago] (4,)
+2026-04-23 12:15:55,103 | INFO | GET /candidates/profile/skills | Status: 200 | User: anonymous | Time: 0.004s
+2026-04-23 12:15:55,103 | INFO | ROLLBACK

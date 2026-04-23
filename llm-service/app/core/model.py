@@ -95,3 +95,65 @@ def infer(vacancy_text: str, resume_text: str) -> str:
     gen_ids = output[0, inputs.input_ids.shape[1]:]
     raw = tokenizer.decode(gen_ids, skip_special_tokens=True)
     return postprocess(raw)
+
+
+PARSE_SYSTEM_PROMPT = (
+    "Ты — система парсинга резюме. "
+    "Извлекай структурированную информацию из текста резюме. "
+    "Отвечай строго в формате JSON без markdown, без пояснений, без лишнего текста."
+)
+
+PARSE_USER_TEMPLATE = (
+    "Извлеки структурированные данные из следующего резюме и верни JSON:\n\n"
+    "{resume_text}\n\n"
+    "Структура JSON:\n"
+    "{{\n"
+    "  \"full_name\": \"...\",\n"
+    "  \"desired_position\": \"...\",\n"
+    "  \"city\": \"...\",\n"
+    "  \"phone\": \"...\",\n"
+    "  \"email\": \"...\",\n"
+    "  \"about_me\": \"...\",\n"
+    "  \"skills\": [\"навык1\", \"навык2\"],\n"
+    "  \"experiences\": [\n"
+    "    {{\"company\": \"...\", \"position\": \"...\", \"start_date\": \"YYYY-MM-DD\",\n"
+    "      \"end_date\": \"YYYY-MM-DD или null\", \"is_current\": false, \"description\": \"...\"}}\n"
+    "  ],\n"
+    "  \"educations\": [\n"
+    "    {{\"institution\": \"...\", \"degree\": \"...\", \"field_of_study\": \"...\",\n"
+    "      \"start_year\": 2018, \"end_year\": 2022}}\n"
+    "  ],\n"
+    "  \"certificates\": [\n"
+    "    {{\"title\": \"...\", \"issuer\": \"...\", \"issue_date\": \"YYYY-MM-DD или null\"}}\n"
+    "  ]\n"
+    "}}\n"
+    "Верни ТОЛЬКО JSON."
+)
+
+
+@torch.inference_mode()
+def infer_parse(resume_text: str) -> str:
+    messages = [
+        {"role": "system", "content": PARSE_SYSTEM_PROMPT},
+        {"role": "user", "content": PARSE_USER_TEMPLATE.format(resume_text=resume_text)},
+    ]
+
+    prompt = tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True,
+    )
+
+    inputs = tokenizer(prompt, return_tensors="pt").to(DEVICE)
+
+    output = model.generate(
+        **inputs,
+        max_new_tokens=2048,
+        do_sample=False,         # greedy — для JSON нужна детерминированность
+        temperature=1.0,
+        repetition_penalty=1.05,
+    )
+
+    gen_ids = output[0, inputs.input_ids.shape[1]:]
+    raw = tokenizer.decode(gen_ids, skip_special_tokens=True)
+    return raw.strip()

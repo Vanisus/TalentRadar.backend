@@ -22,11 +22,7 @@ class AnalyzeResponse(BaseModel):
 
 
 class ParseResumeRequest(BaseModel):
-    system_prompt: str
-    user_prompt: str
-    temperature: float = 0.1
-    max_new_tokens: int = 2048
-
+    resume_text: str
 
 class ParseResumeResponse(BaseModel):
     raw_output: str
@@ -75,12 +71,7 @@ async def analyze(req: AnalyzeRequest):
 
 @router.post("/parse-resume", response_model=ParseResumeResponse)
 async def parse_resume(req: ParseResumeRequest):
-    prompt = f"{req.system_prompt}\n\n{req.user_prompt}"
-    text = infer(prompt, "")
-
-    parsed_json = extract_json(text)
-
-    return ParseResumeResponse(
-        raw_output=text,
-        parsed_json=parsed_json,
-    )
+    from app.core.model import infer_parse
+    raw = infer_parse(req.resume_text)
+    parsed_json = extract_json(raw)
+    return ParseResumeResponse(raw_output=raw, parsed_json=parsed_json)
