@@ -21,6 +21,7 @@ from app.models.vacancy import Vacancy
 from app.services.resumes.resume_parser import parse_resume
 from app.services.resumes.resume_recommendations import analyze_resume_improvements
 from app.services.resumes.resume_structurer import build_profile_from_resume_text
+from app.services.candidate.resume_parser_service import ResumeParserService
 
 ALLOWED_RESUME_EXTENSIONS = [".docx", ".pdf"]
 
@@ -108,7 +109,8 @@ async def handle_resume_upload(
     file: UploadFile,
 ) -> Dict[str, Any]:
     """
-    Сохранить файл резюме, распарсить текст, обновить User и структурированный профиль.
+    Сохранить файл резюме, распарсить текст, обновить User,
+    структурированный профиль и запустить LLM-парсинг.
     Возвращает короткую сводку для ответа API.
     """
     file_ext = Path(file.filename).suffix.lower()
@@ -134,11 +136,11 @@ async def handle_resume_upload(
     # 1) Парсим резюме в текст
     resume_text = parse_resume(str(file_path))
 
-    # 2) Обновляем пользователя (если нужно хранить текст и путь в User)
+    # 2) Обновляем пользователя
     user.resume_path = str(file_path)
     user.resume_text = resume_text
 
-    # 3) Структурируем профиль
+    # 3) Структурируем профиль (быстрый rule-based парсер)
     structured = build_profile_from_resume_text(resume_text)
 
     result = await session.execute(
@@ -151,7 +153,6 @@ async def handle_resume_upload(
         await session.flush()
 
     # 3.1) Сохраняем путь к файлу резюме в профиле
-    # относительный путь от UPLOAD_DIR: 'resumes/user_1_cv.pdf'
     relative_path = str(Path("resumes") / safe_name)
     profile.resume_file_path = relative_path
 
@@ -173,7 +174,7 @@ async def handle_resume_upload(
         sa.delete(Certificate).where(Certificate.profile_id == profile.id)
     )
 
-    # 3.4) Создаём новые сущности
+    # 3.4) Создаём новые сущности из rule-based структурирования
     for exp in structured["experiences"]:
         session.add(WorkExperience(profile_id=profile.id, **exp))
 
@@ -186,7 +187,16 @@ async def handle_resume_upload(
     for cert in structured["certificates"]:
         session.add(Certificate(profile_id=profile.id, **cert))
 
-    # 4) Один общий коммит
+    # 4) LLM-парсинг: отправляем текст в llm-service, результат пишем в parsed_resumes
+    #    parse_and_save делает flush() внутри, но НЕ коммитит — коммит один ниже
+    parser_service = ResumeParserService(session)
+    await parser_service.parse_and_save(
+        user_id=user.id,
+        resume_text=resume_text,
+        resume_path=relative_path,
+    )
+
+    # 5) Единый коммит — всё или ничего
     await session.commit()
 
     return {
