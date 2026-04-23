@@ -1,15 +1,17 @@
-from typing import List
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends, UploadFile, File, Query
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_async_session
 from app.dependencies import get_current_candidate
 from app.models import Application
+from app.models.parsed_resume import ParsedResume
 from app.models.user import User
 from app.schemas.application import ApplicationCreate, ApplicationRead
 from app.schemas.notification import NotificationRead
+from app.schemas.parsed_resume import ParsedResumeRead
 from app.schemas.resume_recommendation import ResumeRecommendationsRead
 from app.schemas.vacancy import VacancyRead, VacancyWithMatchScore
 from app.services.candidate.applications import (
@@ -43,6 +45,27 @@ async def upload_resume(
         "message": "Resume uploaded successfully",
         **result,
     }
+
+
+@router.get("/resume/parsed", response_model=ParsedResumeRead)
+async def get_parsed_resume(
+    current_user: User = Depends(get_current_candidate),
+    session: AsyncSession = Depends(get_async_session),
+):
+    """
+    Возвращает последний результат LLM-парсинга резюме текущего кандидата.
+    parse_status: 'pending' | 'success' | 'failed'
+    """
+    result = await session.execute(
+        select(ParsedResume)
+        .where(ParsedResume.user_id == current_user.id)
+        .order_by(ParsedResume.created_at.desc())
+        .limit(1)
+    )
+    parsed = result.scalar_one_or_none()
+    if parsed is None:
+        raise HTTPException(status_code=404, detail="No parsed resume found. Upload a resume first.")
+    return parsed
 
 
 @router.post("/applications", response_model=ApplicationRead, status_code=201)
@@ -134,9 +157,7 @@ async def get_open_vacancy(
     session: AsyncSession = Depends(get_async_session),
     current_candidate: User = Depends(get_current_candidate),
 ):
-    vacancy = await get_vacancy_for_candidate(
+    return await get_vacancy_for_candidate(
         session=session,
         vacancy_id=vacancy_id,
     )
-    return vacancy
-
