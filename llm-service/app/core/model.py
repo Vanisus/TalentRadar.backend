@@ -7,12 +7,10 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 MODEL_DIR = os.getenv("MODEL_DIR", "/models/qwen35_9b_hrmatch_merged")
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-print(f"Загрузка слитой модели из {MODEL_DIR} ...")
-
+print(f"Загрузка слитой модели из {MODEL_DIR} ...", flush=True)
 
 if not os.path.isdir(MODEL_DIR):
     raise FileNotFoundError(f"Папка модели не найдена: {MODEL_DIR}")
-
 
 tokenizer = AutoTokenizer.from_pretrained(
     MODEL_DIR,
@@ -26,6 +24,9 @@ model = AutoModelForCausalLM.from_pretrained(
     local_files_only=True,
 ).to(DEVICE)
 
+print(f"Модель загружена на {DEVICE}", flush=True)
+
+# ─── Промпты для оценки ───────────────────────────────────────────────────────
 
 system_prompt = (
     "Ты — интеллектуальная система оценки соответствия кандидатов. "
@@ -59,7 +60,6 @@ def postprocess(text: str) -> str:
     if idx != -1:
         text = text[idx:]
     text = text.strip()
-
     patterns = [
         r"(?is)\nthinking process[:\s].*",
         r"(?is)\nchain of thought[:\s].*",
@@ -67,40 +67,16 @@ def postprocess(text: str) -> str:
     ]
     for p in patterns:
         text = re.sub(p, "", text).strip()
-
     return text
 
 
-@torch.inference_mode()
-def infer(vacancy_text: str, resume_text: str) -> str:
-    messages = build_messages(vacancy_text, resume_text)
-
-    prompt = tokenizer.apply_chat_template(
-        messages,
-        tokenize=False,
-        add_generation_prompt=True,
-    )
-
-    inputs = tokenizer(prompt, return_tensors="pt").to(DEVICE)
-
-    output = model.generate(
-        **inputs,
-        max_new_tokens=1024,
-        do_sample=True,
-        temperature=0.2,
-        top_p=0.9,
-        repetition_penalty=1.05,
-    )
-
-    gen_ids = output[0, inputs.input_ids.shape[1]:]
-    raw = tokenizer.decode(gen_ids, skip_special_tokens=True)
-    return postprocess(raw)
-
+# ─── Промпты для парсинга ─────────────────────────────────────────────────────
 
 PARSE_SYSTEM_PROMPT = (
     "Ты — система парсинга резюме. "
     "Извлекай структурированную информацию из текста резюме. "
-    "Отвечай строго в формате JSON без markdown, без пояснений, без лишнего текста."
+    "Отвечай строго в формате JSON без markdown, без пояснений, без лишнего текста. "
+    "Не используй блок <think>. Верни ТОЛЬКО JSON."
 )
 
 PARSE_USER_TEMPLATE = (
@@ -131,29 +107,54 @@ PARSE_USER_TEMPLATE = (
 )
 
 
+def _strip_think(text: str) -> str:
+    """Убирает <think>...</think> блок Qwen3 и markdown-обёртку."""
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
+    text = re.sub(r"^```(?:json)?\s*", "", text.strip())
+    text = re.sub(r"\s*```$", "", text.strip())
+    return text.strip()
+
+
+# ─── Инференс ─────────────────────────────────────────────────────────────────
+
+@torch.inference_mode()
+def infer(vacancy_text: str, resume_text: str) -> str:
+    messages = build_messages(vacancy_text, resume_text)
+    prompt = tokenizer.apply_chat_template(
+        messages, tokenize=False, add_generation_prompt=True,
+    )
+    inputs = tokenizer(prompt, return_tensors="pt").to(DEVICE)
+    output = model.generate(
+        **inputs,
+        max_new_tokens=1024,
+        do_sample=True,
+        temperature=0.2,
+        top_p=0.9,
+        repetition_penalty=1.05,
+    )
+    gen_ids = output[0, inputs.input_ids.shape[1]:]
+    raw = tokenizer.decode(gen_ids, skip_special_tokens=True)
+    return postprocess(raw)
+
+
 @torch.inference_mode()
 def infer_parse(resume_text: str) -> str:
     messages = [
         {"role": "system", "content": PARSE_SYSTEM_PROMPT},
         {"role": "user", "content": PARSE_USER_TEMPLATE.format(resume_text=resume_text)},
     ]
-
     prompt = tokenizer.apply_chat_template(
-        messages,
-        tokenize=False,
-        add_generation_prompt=True,
+        messages, tokenize=False, add_generation_prompt=True,
     )
-
     inputs = tokenizer(prompt, return_tensors="pt").to(DEVICE)
-
     output = model.generate(
         **inputs,
         max_new_tokens=2048,
-        do_sample=False,         # greedy — для JSON нужна детерминированность
-        temperature=1.0,
+        do_sample=False,
         repetition_penalty=1.05,
     )
-
     gen_ids = output[0, inputs.input_ids.shape[1]:]
     raw = tokenizer.decode(gen_ids, skip_special_tokens=True)
-    return raw.strip()
+    raw = _strip_think(raw)
+    print(f"[infer_parse] raw[:600]: {raw[:600]}", flush=True)
+    return raw
