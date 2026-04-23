@@ -108,8 +108,10 @@ PARSE_USER_TEMPLATE = (
 
 
 def _strip_think(text: str) -> str:
-    """Убирает <think>...</think> блок Qwen3 и markdown-обёртку."""
     text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
+    text = re.sub(r"(?is)^(thinking process|думаю|размышление)[:\s\n].*?(\{)", r"\2", text)
+    if "{" in text and not text.strip().startswith("{"):
+        text = text[text.index("{"):]
     text = re.sub(r"^```(?:json)?\s*", "", text.strip())
     text = re.sub(r"\s*```$", "", text.strip())
     return text.strip()
@@ -121,7 +123,10 @@ def _strip_think(text: str) -> str:
 def infer(vacancy_text: str, resume_text: str) -> str:
     messages = build_messages(vacancy_text, resume_text)
     prompt = tokenizer.apply_chat_template(
-        messages, tokenize=False, add_generation_prompt=True,
+        messages,
+        tokenize=False,
+        add_generation_prompt=True,
+        enable_thinking=False,   # ← вот сюда, прямым kwargs
     )
     inputs = tokenizer(prompt, return_tensors="pt").to(DEVICE)
     output = model.generate(
@@ -144,7 +149,10 @@ def infer_parse(resume_text: str) -> str:
         {"role": "user", "content": PARSE_USER_TEMPLATE.format(resume_text=resume_text)},
     ]
     prompt = tokenizer.apply_chat_template(
-        messages, tokenize=False, add_generation_prompt=True,
+        messages,
+        tokenize=False,
+        add_generation_prompt=True,
+        enable_thinking=False,   # ← здесь тоже
     )
     inputs = tokenizer(prompt, return_tensors="pt").to(DEVICE)
     output = model.generate(
