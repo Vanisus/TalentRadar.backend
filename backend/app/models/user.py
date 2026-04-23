@@ -44,7 +44,7 @@ class User(SQLAlchemyBaseUserTable[int], Base):
     resume_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     resume_text: Mapped[str | None] = mapped_column(String, nullable=True)
     full_name: Mapped[str | None] = mapped_column(String, nullable=True)
-
+    parsed_resumes = relationship("ParsedResume", back_populates="user", cascade="all, delete-orphan")
     # Новый one-to-one профиль кандидата
     profile: Mapped["CandidateProfile"] = relationship(
         "CandidateProfile",

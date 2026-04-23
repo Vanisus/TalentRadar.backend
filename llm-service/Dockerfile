@@ -1,22 +1,17 @@
-FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04
+FROM pytorch/pytorch:2.4.1-cuda12.1-cudnn9-runtime
 
+ENV PYTHONUNBUFFERED=1
 ENV DEBIAN_FRONTEND=noninteractive
-
-RUN apt-get update && apt-get install -y \
-    python3 python3-pip git && \
-    rm -rf /var/lib/apt/lists/*
+ENV TOKENIZERS_PARALLELISM=false
 
 WORKDIR /app
 
 COPY requirements.txt .
-RUN pip3 install --no-cache-dir -r requirements.txt
-
-# Скопировать модель в образ, если она лежит рядом
-# COPY qwen35_9b_hrmatch_merged /app/qwen35_9b_hrmatch_merged
-# или смонтировать томом при запуске
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
 
-ENV MODEL_DIR=/app/qwen35_9b_hrmatch_merged
+ENV MODEL_DIR=/models/qwen35_9b_hrmatch_merged
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001"]

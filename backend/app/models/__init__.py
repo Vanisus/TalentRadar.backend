@@ -14,6 +14,7 @@ from app.models.candidate_profile import (
     Certificate,
     PortfolioItem,
 )
+from app.models.parsed_resume import ParsedResume
 
 __all__ = [
     "User",
@@ -32,6 +33,7 @@ __all__ = [
     "CandidateNote",
     "CandidateTag",
     "SavedCandidateSearch",
+    "ParsedResume"
 ]
 
 

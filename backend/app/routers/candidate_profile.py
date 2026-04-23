@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import UploadFile, File, Form
 from app.schemas.certificate_upload import CertificateUploadResponse
 from app.services.candidate.certificate_upload import handle_certificate_upload
-
+from app.core.users import current_active_user
 from app.database import get_async_session
 from app.dependencies import get_current_candidate
 from app.models.user import User
@@ -403,3 +403,22 @@ async def upload_certificate(
         title=title,
     )
     return cert
+
+
+@router.post("/parse")
+async def parse_my_resume(
+    user=Depends(current_active_user),
+    session: AsyncSession = Depends(get_async_session),
+):
+    service = ResumeParserService(session)
+
+    try:
+        parsed = await service.parse_resume(user)
+        await service.map_to_domain_entities(user, parsed)
+        return {
+            "status": "ok",
+            "message": "Resume parsed successfully",
+            "data": parsed.model_dump(),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

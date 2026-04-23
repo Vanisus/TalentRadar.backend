@@ -1,7 +1,12 @@
 # app/api/v1.py
+import json
+import re
+
 from fastapi import APIRouter
 from pydantic import BaseModel
+
 from app.core.model import infer
+
 
 router = APIRouter()
 
@@ -16,21 +21,48 @@ class AnalyzeResponse(BaseModel):
     score: float | None = None
 
 
-def extract_score(raw: str) -> float | None:
-    """
-    Парсим первую строку 'Оценка: X.XX' и достаём число.
-    """
-    import re
+class ParseResumeRequest(BaseModel):
+    system_prompt: str
+    user_prompt: str
+    temperature: float = 0.1
+    max_new_tokens: int = 2048
 
+
+class ParseResumeResponse(BaseModel):
+    raw_output: str
+    parsed_json: dict | None = None
+
+
+def extract_score(raw: str) -> float | None:
     first_line = raw.splitlines()[0] if raw else ""
-    m = re.search(r"Оценка:\s*([01](?:\.\d{1,2})?)", first_line)
+    m = re.search(r"Оценка:\s*([01](?:[.,]\d{1,2})?)", first_line)
     if not m:
         return None
     try:
         val = float(m.group(1).replace(",", "."))
-        # safety clip
         return max(0.0, min(1.0, val))
     except ValueError:
+        return None
+
+
+def extract_json(raw: str) -> dict | None:
+    if not raw:
+        return None
+
+    raw = raw.strip()
+
+    try:
+        return json.loads(raw)
+    except Exception:
+        pass
+
+    match = re.search(r"\{.*\}", raw, re.DOTALL)
+    if not match:
+        return None
+
+    try:
+        return json.loads(match.group(0))
+    except Exception:
         return None
 
 
@@ -39,3 +71,16 @@ async def analyze(req: AnalyzeRequest):
     text = infer(req.vacancy_text, req.resume_text)
     score = extract_score(text)
     return AnalyzeResponse(raw_output=text, score=score)
+
+
+@router.post("/parse-resume", response_model=ParseResumeResponse)
+async def parse_resume(req: ParseResumeRequest):
+    prompt = f"{req.system_prompt}\n\n{req.user_prompt}"
+    text = infer(prompt, "")
+
+    parsed_json = extract_json(text)
+
+    return ParseResumeResponse(
+        raw_output=text,
+        parsed_json=parsed_json,
+    )
