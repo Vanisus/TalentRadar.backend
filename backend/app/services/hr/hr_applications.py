@@ -59,6 +59,9 @@ async def get_vacancy_applications_for_hr(
                 "candidate_full_name": candidate.full_name,
                 "status": application.status.value,
                 "match_score": application.match_score,
+                "match_summary": application.match_summary,
+                "rating": application.rating,
+                "pipeline_stage": application.pipeline_stage,
                 "created_at": application.created_at,
                 "updated_at": application.updated_at,
                 "resume_path": candidate.resume_path,
@@ -79,7 +82,6 @@ async def update_application_status_for_hr(
     application_id: int,
     new_status: ApplicationStatus,
 ) -> Application:
-    # 1) Находим application
     result = await session.execute(
         select(Application).where(Application.id == application_id)
     )
@@ -91,7 +93,6 @@ async def update_application_status_for_hr(
             details={"application_id": application_id},
         )
 
-    # 2) Проверяем, что вакансия принадлежит HR
     result = await session.execute(
         select(Vacancy).where(Vacancy.id == application.vacancy_id)
     )
@@ -107,18 +108,13 @@ async def update_application_status_for_hr(
         raise ForbiddenError(
             message="Forbidden",
             code="FORBIDDEN_VACANCY_ACCESS",
-            details={
-                "vacancy_id": vacancy.id,
-                "hr_id": hr.id,
-            },
+            details={"vacancy_id": vacancy.id, "hr_id": hr.id},
         )
 
-    # 3) Меняем статус
     application.status = new_status
     await session.commit()
     await session.refresh(application)
 
-    # 4) Уведомление кандидату
     if new_status == ApplicationStatus.ACCEPTED:
         msg = f"Вас пригласили на скрининг по вакансии '{vacancy.title}'."
     elif new_status == ApplicationStatus.REJECTED:
@@ -145,6 +141,7 @@ async def get_all_applications_for_hr(
     """
     Все отклики по всем вакансиям текущего HR,
     с опциональной фильтрацией по статусу.
+    Включает match_summary, rating, pipeline_stage.
     """
     query = (
         select(Application, User, Vacancy)
@@ -171,6 +168,9 @@ async def get_all_applications_for_hr(
                 "candidate_full_name": candidate.full_name,
                 "status": application.status.value,
                 "match_score": application.match_score,
+                "match_summary": application.match_summary,
+                "rating": application.rating,
+                "pipeline_stage": application.pipeline_stage,
                 "created_at": application.created_at,
                 "updated_at": application.updated_at,
                 "resume_path": candidate.resume_path,
