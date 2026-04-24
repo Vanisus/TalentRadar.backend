@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, File, Query
 from sqlalchemy import select
@@ -18,7 +18,7 @@ from app.schemas.vacancy import VacancyRead, VacancyWithMatchScore
 from app.services.candidate.applications import (
     create_application_for_candidate,
     run_llm_match_score,
-    get_open_vacancies,
+    get_vacancies_with_match_score,
     get_recommended_vacancies_for_candidate,
     get_vacancy_for_candidate,
 )
@@ -139,11 +139,19 @@ async def mark_notification_as_read(
     )
 
 
-@router.get("/vacancies", response_model=List[VacancyRead])
+@router.get("/vacancies", response_model=List[VacancyWithMatchScore])
 async def get_open_vacancies_endpoint(
+    current_user: User = Depends(get_current_candidate),
     session: AsyncSession = Depends(get_async_session),
 ):
-    return await get_open_vacancies(session=session)
+    """
+    Список всех активных вакансий с match_score (быстрый, без LLM).
+    Фронт показывает match_score под вакансией только если score >= 50%.
+    """
+    return await get_vacancies_with_match_score(
+        session=session,
+        current_user=current_user,
+    )
 
 
 @router.get("/vacancies/recommended", response_model=List[VacancyWithMatchScore])
@@ -151,10 +159,10 @@ async def get_recommended_vacancies(
     current_user: User = Depends(get_current_candidate),
     session: AsyncSession = Depends(get_async_session),
     min_score: float = Query(
-        0.0,
+        50.0,
         ge=0.0,
         le=100.0,
-        description="Минимальный процент совпадения (0-100)",
+        description="Минимальный процент совпадения (0-100), по умолчанию 50",
     ),
 ):
     return await get_recommended_vacancies_for_candidate(
@@ -175,13 +183,31 @@ async def get_resume_recommendations(
     )
 
 
-@router.get("/vacancies/{vacancy_id}", response_model=VacancyRead)
+@router.get("/vacancies/{vacancy_id}", response_model=VacancyWithMatchScore)
 async def get_open_vacancy(
     vacancy_id: int,
     session: AsyncSession = Depends(get_async_session),
-    current_candidate: User = Depends(get_current_candidate),
+    current_user: User = Depends(get_current_candidate),
 ):
-    return await get_vacancy_for_candidate(
-        session=session,
-        vacancy_id=vacancy_id,
+    """
+    Одна вакансия с match_score для текущего кандидата.
+    """
+    vacancy = await get_vacancy_for_candidate(session=session, vacancy_id=vacancy_id)
+    score = 0.0
+    if current_user.resume_text:
+        from app.services.analytics.match_score import calculate_match_score
+        score = calculate_match_score(
+            resume_text=current_user.resume_text,
+            required_skills=vacancy.required_skills,
+        )
+    return VacancyWithMatchScore(
+        id=vacancy.id,
+        title=vacancy.title,
+        description=vacancy.description,
+        required_skills=vacancy.required_skills,
+        hr_id=vacancy.hr_id,
+        is_active=vacancy.is_active,
+        created_at=vacancy.created_at,
+        updated_at=vacancy.updated_at,
+        match_score=score,
     )
