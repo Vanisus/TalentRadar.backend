@@ -65,11 +65,7 @@ class ResumeParserService:
 
         return parsed
 
-    async def _update_profile_from_json(
-        self,
-        user_id: int,
-        data: dict,
-    ) -> None:
+    async def _update_profile_from_json(self, user_id: int, data: dict) -> None:
         result = await self.session.execute(
             select(CandidateProfile).where(CandidateProfile.user_id == user_id)
         )
@@ -77,27 +73,36 @@ class ResumeParserService:
         if profile is None:
             return
 
-        # Обновляем базовые поля если LLM вернул непустые значения
-        field_map = {
+        # Перезаписываем базовые поля
+        for json_key, model_field in {
+            "full_name": "full_name",
             "desired_position": "desired_position",
             "city": "city",
+            "phone": "phone",
+            "email": "email",
             "about_me": "about_me",
-        }
-        for json_key, model_field in field_map.items():
+        }.items():
             value = data.get(json_key)
             if value:
                 setattr(profile, model_field, value)
 
-        # Навыки — добавляем только те которых ещё нет
-        existing_skills = {s.name.lower() for s in profile.skills}
-        for skill_name in data.get("skills", []):
-            if skill_name.lower() not in existing_skills:
-                self.session.add(CandidateSkill(
-                    profile_id=profile.id,
-                    name=skill_name,
-                ))
+        # Чистим старые связанные записи и пишем новые
+        await self.session.execute(
+            sa.delete(CandidateSkill).where(CandidateSkill.profile_id == profile.id)
+        )
+        await self.session.execute(
+            sa.delete(WorkExperience).where(WorkExperience.profile_id == profile.id)
+        )
+        await self.session.execute(
+            sa.delete(Education).where(Education.profile_id == profile.id)
+        )
+        await self.session.execute(
+            sa.delete(Certificate).where(Certificate.profile_id == profile.id)
+        )
 
-        # Опыт — добавляем поверх существующего (не удаляем)
+        for skill_name in data.get("skills", []):
+            self.session.add(CandidateSkill(profile_id=profile.id, name=skill_name))
+
         for exp in data.get("experiences", []):
             self.session.add(WorkExperience(
                 profile_id=profile.id,
@@ -109,7 +114,6 @@ class ResumeParserService:
                 is_current=exp.get("is_current", False),
             ))
 
-        # Образование
         for edu in data.get("educations", []):
             self.session.add(Education(
                 profile_id=profile.id,
@@ -120,7 +124,6 @@ class ResumeParserService:
                 end_year=edu.get("end_year"),
             ))
 
-        # Сертификаты
         for cert in data.get("certificates", []):
             self.session.add(Certificate(
                 profile_id=profile.id,
@@ -128,6 +131,8 @@ class ResumeParserService:
                 issuer=cert.get("issuer"),
                 issue_date=_parse_date(cert.get("issue_date")),
             ))
+
+
 
 
 def _parse_date(value: str | None) -> date | None:

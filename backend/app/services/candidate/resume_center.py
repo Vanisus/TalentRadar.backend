@@ -108,11 +108,6 @@ async def handle_resume_upload(
     user: User,
     file: UploadFile,
 ) -> Dict[str, Any]:
-    """
-    Сохранить файл резюме, распарсить текст, обновить User,
-    структурированный профиль и запустить LLM-парсинг.
-    Возвращает короткую сводку для ответа API.
-    """
     file_ext = Path(file.filename).suffix.lower()
     if file_ext not in ALLOWED_RESUME_EXTENSIONS:
         raise BadRequestError(
@@ -140,9 +135,7 @@ async def handle_resume_upload(
     user.resume_path = str(file_path)
     user.resume_text = resume_text
 
-    # 3) Структурируем профиль (быстрый rule-based парсер)
-    structured = build_profile_from_resume_text(resume_text)
-
+    # 3) Создаём профиль если нет
     result = await session.execute(
         select(CandidateProfile).where(CandidateProfile.user_id == user.id)
     )
@@ -152,43 +145,10 @@ async def handle_resume_upload(
         session.add(profile)
         await session.flush()
 
-    # 3.1) Сохраняем путь к файлу резюме в профиле
     relative_path = str(Path("resumes") / safe_name)
     profile.resume_file_path = relative_path
 
-    # 3.2) Обновляем базовые поля профиля из structured["profile"]
-    for field, value in structured["profile"].items():
-        setattr(profile, field, value)
-
-    # 3.3) Чистим старые записи
-    await session.execute(
-        sa.delete(WorkExperience).where(WorkExperience.profile_id == profile.id)
-    )
-    await session.execute(
-        sa.delete(Education).where(Education.profile_id == profile.id)
-    )
-    await session.execute(
-        sa.delete(CandidateSkill).where(CandidateSkill.profile_id == profile.id)
-    )
-    await session.execute(
-        sa.delete(Certificate).where(Certificate.profile_id == profile.id)
-    )
-
-    # 3.4) Создаём новые сущности из rule-based структурирования
-    for exp in structured["experiences"]:
-        session.add(WorkExperience(profile_id=profile.id, **exp))
-
-    for edu in structured["educations"]:
-        session.add(Education(profile_id=profile.id, **edu))
-
-    for sk in structured["skills"]:
-        session.add(CandidateSkill(profile_id=profile.id, **sk))
-
-    for cert in structured["certificates"]:
-        session.add(Certificate(profile_id=profile.id, **cert))
-
-    # 4) LLM-парсинг: отправляем текст в llm-service, результат пишем в parsed_resumes
-    #    parse_and_save делает flush() внутри, но НЕ коммитит — коммит один ниже
+    # 4) LLM-парсинг — заполняет профиль сам
     parser_service = ResumeParserService(session)
     await parser_service.parse_and_save(
         user_id=user.id,
@@ -196,8 +156,12 @@ async def handle_resume_upload(
         resume_path=relative_path,
     )
 
-    # 5) Единый коммит — всё или ничего
-    await session.commit()
+    # 5) Единый коммит
+    try:
+        await session.commit()
+    except Exception:
+        await session.rollback()
+        raise
 
     return {
         "file_path": relative_path,
