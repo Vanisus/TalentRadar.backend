@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_async_session
+from app.database import get_async_session, async_session_maker
 from app.dependencies import get_current_candidate
 from app.models import Application
 from app.models.parsed_resume import ParsedResume
@@ -26,6 +26,8 @@ from app.services.notifications.notifications import (
     get_notifications_for_user,
     mark_notification_as_read_for_user,
 )
+
+from app.services.llm.application_analysis import _build_vacancy_text
 
 router = APIRouter(prefix="/candidates", tags=["Candidates"])
 
@@ -71,14 +73,36 @@ async def get_parsed_resume(
 @router.post("/applications", response_model=ApplicationRead, status_code=201)
 async def create_application(
     application_data: ApplicationCreate,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_candidate),
     session: AsyncSession = Depends(get_async_session),
 ):
-    return await create_application_for_candidate(
+    application = await create_application_for_candidate(
         session=session,
         current_user=current_user,
         application_data=application_data,
     )
+
+    # Загружаем вакансию для передачи в фон
+    from sqlalchemy import select
+    from app.models.vacancy import Vacancy
+    result = await session.execute(select(Vacancy).where(Vacancy.id == application_data.vacancy_id))
+    vacancy = result.scalar_one()
+
+    background_tasks.add_task(
+        run_llm_match_score,
+        application_id=application.id,
+        vacancy_id=vacancy.id,
+        hr_id=vacancy.hr_id,
+        vacancy_title=vacancy.title,
+        vacancy_text=_build_vacancy_text(vacancy),
+        resume_text=current_user.resume_text,
+        candidate_id=current_user.id,
+        candidate_name=current_user.full_name or current_user.email,
+        session_factory=async_session_maker,
+    )
+
+    return application
 
 
 @router.get("/applications", response_model=List[ApplicationRead])
