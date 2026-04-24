@@ -50,7 +50,6 @@ async def create_application_for_candidate(
     if not current_user.resume_text:
         raise ValidationError("Please upload your resume first", "RESUME_REQUIRED", {"candidate_id": current_user.id})
 
-    # Создаём отклик мгновенно — LLM посчитает в фоне
     application = Application(
         vacancy_id=application_data.vacancy_id,
         candidate_id=current_user.id,
@@ -59,10 +58,10 @@ async def create_application_for_candidate(
     )
     session.add(application)
 
-    # Уведомление кандидату — сразу, без скора
+    # Простое подтверждение отклика — без match_score, он кандидату не нужен
     session.add(Notification(
         user_id=current_user.id,
-        message=f"Вы успешно откликнулись на вакансию «{vacancy.title}». Анализ соответствия выполняется...",
+        message=f"Вы успешно откликнулись на вакансию «{vacancy.title}».",
     ))
 
     await session.commit()
@@ -81,7 +80,10 @@ async def run_llm_match_score(
     candidate_name: str,
     session_factory,
 ) -> None:
-    """Background task: calls LLM and updates match_score + match_summary."""
+    """
+    Background task: calls LLM, updates match_score + match_summary.
+    Notifies HR only — candidate sees match_score before applying, not after.
+    """
     async with session_factory() as session:
         try:
             llm_response = await call_llm_service(
@@ -105,15 +107,7 @@ async def run_llm_match_score(
         application.match_score = match_score
         application.match_summary = match_summary
 
-        if match_score >= 70:
-            candidate_msg = f"Анализ завершён: вы подходите на вакансию «{vacancy_title}» на {match_score:.0f}%"
-        elif match_score >= 50:
-            candidate_msg = f"Анализ завершён: вы подходите на вакансию «{vacancy_title}» на {match_score:.0f}%"
-        else:
-            candidate_msg = f"Анализ завершён: ваш профиль соответствует вакансии «{vacancy_title}» на {match_score:.0f}%"
-
-        session.add(Notification(user_id=candidate_id, message=candidate_msg))
-
+        # Уведомляем только HR — кандидату match_score показывался до отклика, после он не нужен
         if match_score >= 50:
             session.add(Notification(
                 user_id=hr_id,
@@ -144,6 +138,40 @@ async def get_open_vacancies(session: AsyncSession) -> List[Vacancy]:
     return list(result.scalars().all())
 
 
+async def get_vacancies_with_match_score(
+    session: AsyncSession,
+    current_user: User,
+) -> List[VacancyWithMatchScore]:
+    """
+    Список всех активных вакансий с быстрым match_score (calculate_match_score, без LLM).
+    match_score показывается кандидату только ДО отклика (и только если >= 50%).
+    """
+    vacancies = await get_open_vacancies(session=session)
+    result = []
+    for vacancy in vacancies:
+        score = 0.0
+        if current_user.resume_text:
+            score = calculate_match_score(
+                resume_text=current_user.resume_text,
+                required_skills=vacancy.required_skills,
+            )
+        result.append(
+            VacancyWithMatchScore(
+                id=vacancy.id,
+                title=vacancy.title,
+                description=vacancy.description,
+                required_skills=vacancy.required_skills,
+                hr_id=vacancy.hr_id,
+                is_active=vacancy.is_active,
+                created_at=vacancy.created_at,
+                updated_at=vacancy.updated_at,
+                match_score=score,
+            )
+        )
+    result.sort(key=lambda x: x.match_score, reverse=True)
+    return result
+
+
 async def get_recommended_vacancies_for_candidate(
     session: AsyncSession,
     current_user: User,
@@ -155,34 +183,8 @@ async def get_recommended_vacancies_for_candidate(
             code="RESUME_REQUIRED",
             details={"candidate_id": current_user.id},
         )
-
-    vacancies = await get_open_vacancies(session=session)
-
-    recommended: List[VacancyWithMatchScore] = []
-    for vacancy in vacancies:
-        match_score = calculate_match_score(
-            resume_text=current_user.resume_text,
-            required_skills=vacancy.required_skills,
-        )
-        if match_score < min_score:
-            continue
-
-        recommended.append(
-            VacancyWithMatchScore(
-                id=vacancy.id,
-                title=vacancy.title,
-                description=vacancy.description,
-                required_skills=vacancy.required_skills,
-                hr_id=vacancy.hr_id,
-                is_active=vacancy.is_active,
-                created_at=vacancy.created_at,
-                updated_at=vacancy.updated_at,
-                match_score=match_score,
-            )
-        )
-
-    recommended.sort(key=lambda x: x.match_score, reverse=True)
-    return recommended
+    all_vacancies = await get_vacancies_with_match_score(session=session, current_user=current_user)
+    return [v for v in all_vacancies if v.match_score >= min_score]
 
 
 async def get_vacancy_for_candidate(
