@@ -6,6 +6,7 @@ from sqlalchemy.orm import selectinload
 from app.exceptions import NotFoundError, ForbiddenError
 from app.models.application import Application
 from app.models.user import User
+from app.models.candidate_profile import CandidateProfile
 from app.services.llm.client import call_llm_service
 
 
@@ -28,28 +29,32 @@ async def analyze_application_with_llm(
     if vacancy.hr_id != hr.id:
         raise ForbiddenError("Access denied", "FORBIDDEN", {"application_id": application_id})
 
-    # грузим кандидата с profile
+    # Грузим кандидата с профилем и всеми вложенными связями за один запрос
     cand_result = await session.execute(
-        select(User).where(User.id == application.candidate_id).options(selectinload(User.profile))
+        select(User)
+        .where(User.id == application.candidate_id)
+        .options(
+            selectinload(User.profile).options(
+                selectinload(CandidateProfile.skills),
+                selectinload(CandidateProfile.experiences),
+                selectinload(CandidateProfile.educations),
+            )
+        )
     )
     candidate = cand_result.scalar_one_or_none()
     if candidate is None:
         raise NotFoundError("Candidate not found", "CANDIDATE_NOT_FOUND", {"candidate_id": application.candidate_id})
 
-    # собираем текст вакансии
     vacancy_text = _build_vacancy_text(vacancy)
-
-    # собираем резюме (resume_text + профиль)
     resume_text = _build_resume_text(candidate)
 
     llm_response = await call_llm_service(vacancy_text, resume_text)
     raw_output = llm_response["raw_output"]
     score = llm_response.get("score")
 
-    # сохраняем в Application.match_summary и, опционально, match_score
     application.match_summary = raw_output
     if score is not None:
-        application.match_score = round(float(score) * 100, 2)  # приводим к 0–100, если хочешь
+        application.match_score = round(float(score) * 100, 2)
 
     await session.commit()
     await session.refresh(application)
@@ -71,7 +76,6 @@ def _build_vacancy_text(vacancy) -> str:
 
 
 def _build_resume_text(candidate: User) -> str:
-    # базовый текст из user.resume_text
     chunks = []
     if candidate.full_name:
         chunks.append(f"ФИО: {candidate.full_name}")
@@ -93,7 +97,7 @@ def _build_resume_text(candidate: User) -> str:
             for e in profile.experiences:
                 lines.append(
                     f"- {e.position} в {e.company} ({e.start_date} — "
-                    f"{'н.в.' if e.is_current else e.end_date}): {e.description or ''}"
+                    f"{'\u043d.в.' if e.is_current else e.end_date}): {e.description or ''}"
                 )
             chunks.append("Опыт работы:\n" + "\n".join(lines))
 
@@ -101,7 +105,7 @@ def _build_resume_text(candidate: User) -> str:
             lines = []
             for ed in profile.educations:
                 lines.append(
-                    f"- {ed.institution}, {ed.degree or ''} ({ed.start_year}–{ed.end_year})"
+                    f"- {ed.institution}, {ed.degree or ''} ({ed.start_year}\u2013{ed.end_year})"
                 )
             chunks.append("Образование:\n" + "\n".join(lines))
 
