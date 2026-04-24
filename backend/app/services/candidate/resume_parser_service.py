@@ -2,6 +2,8 @@
 import json
 import logging
 from datetime import date
+
+import sqlalchemy as sa
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -131,7 +133,6 @@ class ResumeParserService:
                 issuer=cert.get("issuer"),
                 issue_date=_parse_date(cert.get("issue_date")),
             ))
-
 
 
 
