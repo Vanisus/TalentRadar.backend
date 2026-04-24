@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, File, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,6 +9,7 @@ from app.dependencies import get_current_candidate
 from app.models import Application
 from app.models.parsed_resume import ParsedResume
 from app.models.user import User
+from app.models.vacancy import Vacancy
 from app.schemas.application import ApplicationCreate, ApplicationRead
 from app.schemas.notification import NotificationRead
 from app.schemas.parsed_resume import ParsedResumeRead
@@ -16,6 +17,7 @@ from app.schemas.resume_recommendation import ResumeRecommendationsRead
 from app.schemas.vacancy import VacancyRead, VacancyWithMatchScore
 from app.services.candidate.applications import (
     create_application_for_candidate,
+    run_llm_match_score,
     get_open_vacancies,
     get_recommended_vacancies_for_candidate,
     get_vacancy_for_candidate,
@@ -26,7 +28,6 @@ from app.services.notifications.notifications import (
     get_notifications_for_user,
     mark_notification_as_read_for_user,
 )
-
 from app.services.llm.application_analysis import _build_vacancy_text
 
 router = APIRouter(prefix="/candidates", tags=["Candidates"])
@@ -83,10 +84,9 @@ async def create_application(
         application_data=application_data,
     )
 
-    # Загружаем вакансию для передачи в фон
-    from sqlalchemy import select
-    from app.models.vacancy import Vacancy
-    result = await session.execute(select(Vacancy).where(Vacancy.id == application_data.vacancy_id))
+    result = await session.execute(
+        select(Vacancy).where(Vacancy.id == application_data.vacancy_id)
+    )
     vacancy = result.scalar_one()
 
     background_tasks.add_task(
