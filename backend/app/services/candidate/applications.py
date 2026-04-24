@@ -81,7 +81,7 @@ async def run_llm_match_score(
     candidate_name: str,
     session_factory,
 ) -> None:
-    """Фоновая задача: вызывает LLM и обновляет match_score + match_summary."""
+    """Background task: calls LLM and updates match_score + match_summary."""
     async with session_factory() as session:
         try:
             llm_response = await call_llm_service(
@@ -105,7 +105,6 @@ async def run_llm_match_score(
         application.match_score = match_score
         application.match_summary = match_summary
 
-        # Уведомление кандидату с реальным результатом
         if match_score >= 70:
             candidate_msg = f"Анализ завершён: вы подходите на вакансию «{vacancy_title}» на {match_score:.0f}%"
         elif match_score >= 50:
@@ -115,7 +114,6 @@ async def run_llm_match_score(
 
         session.add(Notification(user_id=candidate_id, message=candidate_msg))
 
-        # Уведомление HR если кандидат подходит
         if match_score >= 50:
             session.add(Notification(
                 user_id=hr_id,
@@ -127,3 +125,81 @@ async def run_llm_match_score(
 
         await session.commit()
         logger.info(f"[LLM background] application {application_id} scored: {match_score}")
+
+
+async def get_candidate_applications(
+    session: AsyncSession,
+    current_user: User,
+) -> List[Application]:
+    result = await session.execute(
+        select(Application).where(Application.candidate_id == current_user.id)
+    )
+    return list(result.scalars().all())
+
+
+async def get_open_vacancies(session: AsyncSession) -> List[Vacancy]:
+    result = await session.execute(
+        select(Vacancy).where(Vacancy.is_active == True)
+    )
+    return list(result.scalars().all())
+
+
+async def get_recommended_vacancies_for_candidate(
+    session: AsyncSession,
+    current_user: User,
+    min_score: float,
+) -> List[VacancyWithMatchScore]:
+    if not current_user.resume_text:
+        raise ValidationError(
+            message="Please upload your resume first to get recommendations",
+            code="RESUME_REQUIRED",
+            details={"candidate_id": current_user.id},
+        )
+
+    vacancies = await get_open_vacancies(session=session)
+
+    recommended: List[VacancyWithMatchScore] = []
+    for vacancy in vacancies:
+        match_score = calculate_match_score(
+            resume_text=current_user.resume_text,
+            required_skills=vacancy.required_skills,
+        )
+        if match_score < min_score:
+            continue
+
+        recommended.append(
+            VacancyWithMatchScore(
+                id=vacancy.id,
+                title=vacancy.title,
+                description=vacancy.description,
+                required_skills=vacancy.required_skills,
+                hr_id=vacancy.hr_id,
+                is_active=vacancy.is_active,
+                created_at=vacancy.created_at,
+                updated_at=vacancy.updated_at,
+                match_score=match_score,
+            )
+        )
+
+    recommended.sort(key=lambda x: x.match_score, reverse=True)
+    return recommended
+
+
+async def get_vacancy_for_candidate(
+    session: AsyncSession,
+    vacancy_id: int,
+) -> Vacancy:
+    result = await session.execute(
+        select(Vacancy).where(
+            Vacancy.id == vacancy_id,
+            Vacancy.is_active.is_(True),
+        )
+    )
+    vacancy = result.scalar_one_or_none()
+    if vacancy is None:
+        raise NotFoundError(
+            message="Vacancy not found",
+            code="VACANCY_NOT_FOUND",
+            details={"vacancy_id": vacancy_id},
+        )
+    return vacancy
