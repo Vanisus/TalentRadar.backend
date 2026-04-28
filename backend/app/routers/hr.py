@@ -9,7 +9,7 @@ from app.dependencies import get_current_hr
 from app.models.application import Application, ApplicationStatus
 from app.models.user import User
 from app.models.user import User as CandidateUser
-from app.schemas.application import ApplicationStatusUpdate, ApplicationRead
+from app.schemas.application import ApplicationStatusUpdate, ApplicationRead, ApplicationHRRead
 from app.schemas.candidate_analysis import (
     VacancyApplicationsAnalysis,
     ApplicationAnalysis,
@@ -169,7 +169,7 @@ async def update_application_status(
     return application
 
 
-@router.get("/applications", response_model=List[ApplicationRead])
+@router.get("/applications", response_model=List[ApplicationHRRead])
 async def get_all_applications(
     status: Optional[ApplicationStatus] = Query(
         None,
